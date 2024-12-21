@@ -4,10 +4,13 @@ import {
   View,
   Text,
   PermissionsAndroid,
-  Alert,
+  NativeModules,
+  Platform,
   DeviceEventEmitter,
   StyleSheet,
   FlatList,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -20,15 +23,42 @@ type Message = {
 const App: React.FC = () => {
   const [receiveSmsPermission, setReceiveSmsPermission] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [appState, setAppState] = useState<AppStateStatus>(
+    AppState.currentState,
+  );
 
-  const requestSmsPermission = async (): Promise<void> => {
+  const requestPermissions = async (): Promise<void> => {
     try {
-      const permission = await PermissionsAndroid.request(
+      // Request both SMS and notification permissions
+      const permissions = [
         PermissionsAndroid.PERMISSIONS.RECEIVE_SMS,
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      ];
+
+      const results = await PermissionsAndroid.requestMultiple(permissions);
+
+      // Check if both permissions are granted
+      const allGranted = Object.values(results).every(
+        result => result === PermissionsAndroid.RESULTS.GRANTED,
       );
-      setReceiveSmsPermission(permission);
+
+      if (allGranted && Platform.OS === 'android') {
+        setReceiveSmsPermission(PermissionsAndroid.RESULTS.GRANTED);
+        // Start the service only after both permissions are granted
+        try {
+          const {SmsListenerModule} = NativeModules;
+          await SmsListenerModule.startBackgroundService();
+          console.log('Background service started successfully');
+        } catch (serviceError) {
+          console.error('Error starting background service:', serviceError);
+        }
+      } else {
+        console.log('Some permissions were denied');
+        setReceiveSmsPermission(PermissionsAndroid.RESULTS.DENIED);
+      }
     } catch (err) {
       console.error('Permission error:', err);
+      setReceiveSmsPermission(PermissionsAndroid.RESULTS.DENIED);
     }
   };
 
@@ -53,33 +83,60 @@ const App: React.FC = () => {
     try {
       const storedMessages = await AsyncStorage.getItem('messages');
       if (storedMessages) {
-        setMessages(JSON.parse(storedMessages));
+        const parsedMessages = JSON.parse(storedMessages);
+        const sortedMessages = parsedMessages.sort(
+          (a: Message, b: Message) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        );
+        setMessages(sortedMessages);
       }
     } catch (err) {
       console.error('Load error:', err);
     }
   };
 
+  // Handle app state changes
   useEffect(() => {
-    requestSmsPermission();
-    loadMessages();
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (appState.match(/inactive|background/) && nextAppState === 'active') {
+        loadMessages();
+      }
+      setAppState(nextAppState);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [appState]);
+
+  // Initial setup
+  useEffect(() => {
+    const initializeApp = async () => {
+      await requestPermissions();
+      await loadMessages();
+    };
+
+    initializeApp();
   }, []);
 
+  // SMS listener setup
   useEffect(() => {
     if (receiveSmsPermission === PermissionsAndroid.RESULTS.GRANTED) {
       const subscriber = DeviceEventEmitter.addListener(
         'onSMSReceived',
         (message: string) => {
-          const {messageBody, senderPhoneNumber} = JSON.parse(message);
-          const timestamp = new Date().toISOString();
+          try {
+            const parsedMessage = JSON.parse(message);
+            const newMessage: Message = {
+              messageBody: parsedMessage.messageBody,
+              senderPhoneNumber: parsedMessage.senderPhoneNumber,
+              timestamp: new Date(parsedMessage.timestamp).toISOString(),
+            };
 
-          const newMessage: Message = {
-            messageBody,
-            senderPhoneNumber,
-            timestamp,
-          };
-
-          saveMessages([newMessage]);
+            saveMessages([newMessage]);
+          } catch (err) {
+            console.error('Error processing message:', err);
+          }
         },
       );
 
@@ -99,18 +156,27 @@ const App: React.FC = () => {
     </View>
   );
 
+  const renderEmptyComponent = () => (
+    <Text style={styles.noMessagesText}>No messages yet!</Text>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.titleText}>Received Messages</Text>
-      {messages.length === 0 ? (
-        <Text style={styles.noMessagesText}>No messages yet!</Text>
-      ) : (
-        <FlatList
-          data={messages}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
-        />
-      )}
+      <View style={styles.header}>
+        <Text style={styles.titleText}>SMS Inbox</Text>
+        {receiveSmsPermission !== PermissionsAndroid.RESULTS.GRANTED && (
+          <Text style={styles.permissionText}>
+            SMS and notification permissions are required
+          </Text>
+        )}
+      </View>
+      <FlatList
+        data={messages}
+        renderItem={renderItem}
+        keyExtractor={(item, index) => `${item.timestamp}-${index}`}
+        ListEmptyComponent={renderEmptyComponent}
+        contentContainerStyle={styles.listContent}
+      />
     </SafeAreaView>
   );
 };
@@ -119,15 +185,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-    paddingHorizontal: 16,
-    paddingTop: 20,
+  },
+  header: {
+    padding: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
   titleText: {
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
     color: '#333',
+    textAlign: 'center',
+  },
+  permissionText: {
+    color: '#e74c3c',
+    textAlign: 'center',
+    marginTop: 8,
+    fontSize: 14,
+  },
+  listContent: {
+    padding: 16,
+    flexGrow: 1,
   },
   noMessagesText: {
     textAlign: 'center',
@@ -137,29 +216,33 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 8,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    shadowOffset: {width: 0, height: 2},
     elevation: 3,
   },
   senderText: {
-    fontWeight: 'bold',
     fontSize: 16,
-    color: '#007BFF',
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
   },
   messageText: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 4,
+    fontSize: 15,
+    color: '#34495e',
+    lineHeight: 20,
   },
   timestampText: {
     fontSize: 12,
-    color: '#999',
-    marginTop: 4,
+    color: '#95a5a6',
+    marginTop: 8,
     textAlign: 'right',
   },
 });

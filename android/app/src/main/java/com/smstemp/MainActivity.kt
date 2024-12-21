@@ -1,3 +1,4 @@
+//MainActivity.kt
 package com.smstemp
 
 import com.facebook.react.ReactActivity
