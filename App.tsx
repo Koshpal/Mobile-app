@@ -1,117 +1,166 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  Text,
+  PermissionsAndroid,
+  Alert,
+  DeviceEventEmitter,
+  StyleSheet,
+  FlatList,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+type Message = {
+  messageBody: string;
+  senderPhoneNumber: string;
+  timestamp: string;
+};
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const App: React.FC = () => {
+  const [receiveSmsPermission, setReceiveSmsPermission] = useState<string>('');
+  const [messages, setMessages] = useState<Message[]>([]);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
+  const requestSmsPermission = async (): Promise<void> => {
+    try {
+      const permission = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECEIVE_SMS,
+      );
+      setReceiveSmsPermission(permission);
+    } catch (err) {
+      console.error('Permission error:', err);
+    }
+  };
+
+  const saveMessages = async (newMessages: Message[]): Promise<void> => {
+    try {
+      const storedMessages = await AsyncStorage.getItem('messages');
+      const parsedMessages: Message[] = storedMessages
+        ? JSON.parse(storedMessages)
+        : [];
+      const updatedMessages = [...parsedMessages, ...newMessages].sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
+      await AsyncStorage.setItem('messages', JSON.stringify(updatedMessages));
+      setMessages(updatedMessages);
+    } catch (err) {
+      console.error('Storage error:', err);
+    }
+  };
+
+  const loadMessages = async (): Promise<void> => {
+    try {
+      const storedMessages = await AsyncStorage.getItem('messages');
+      if (storedMessages) {
+        setMessages(JSON.parse(storedMessages));
+      }
+    } catch (err) {
+      console.error('Load error:', err);
+    }
+  };
+
+  useEffect(() => {
+    requestSmsPermission();
+    loadMessages();
+  }, []);
+
+  useEffect(() => {
+    if (receiveSmsPermission === PermissionsAndroid.RESULTS.GRANTED) {
+      const subscriber = DeviceEventEmitter.addListener(
+        'onSMSReceived',
+        (message: string) => {
+          const {messageBody, senderPhoneNumber} = JSON.parse(message);
+          const timestamp = new Date().toISOString();
+
+          const newMessage: Message = {
+            messageBody,
+            senderPhoneNumber,
+            timestamp,
+          };
+
+          saveMessages([newMessage]);
+        },
+      );
+
+      return () => {
+        subscriber.remove();
+      };
+    }
+  }, [receiveSmsPermission]);
+
+  const renderItem = ({item}: {item: Message}) => (
+    <View style={styles.messageContainer}>
+      <Text style={styles.senderText}>{item.senderPhoneNumber}</Text>
+      <Text style={styles.messageText}>{item.messageBody}</Text>
+      <Text style={styles.timestampText}>
+        {new Date(item.timestamp).toLocaleString()}
       </Text>
     </View>
   );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.titleText}>Received Messages</Text>
+      {messages.length === 0 ? (
+        <Text style={styles.noMessagesText}>No messages yet!</Text>
+      ) : (
+        <FlatList
+          data={messages}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => index.toString()}
+        />
+      )}
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 16,
+    paddingTop: 20,
   },
-  sectionTitle: {
+  titleText: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+    color: '#333',
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  noMessagesText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#888',
+    marginTop: 20,
   },
-  highlight: {
-    fontWeight: '700',
+  messageContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: {width: 0, height: 2},
+    elevation: 3,
+  },
+  senderText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#007BFF',
+  },
+  messageText: {
+    fontSize: 14,
+    color: '#333',
+    marginTop: 4,
+  },
+  timestampText: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+    textAlign: 'right',
   },
 });
 
