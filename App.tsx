@@ -20,31 +20,151 @@ type Message = {
   timestamp: string;
 };
 
+const BANK_KEYWORDS = [
+  'credited',
+  'debited',
+  'spent',
+  'withdrawn',
+  'deposited',
+  'transfer',
+  'balance',
+  'a/c',
+  'acct',
+  'account',
+  'transaction',
+  'payment',
+  'upi',
+  'neft',
+  'imps',
+  'rtgs',
+];
+
+const BANK_NAMES = [
+  'sbi',
+  'hdfc',
+  'icici',
+  'axis',
+  'kotak',
+  'pnb',
+  'rbl',
+  'canara',
+  'bob',
+  'boi',
+  'federal',
+  'idbi',
+  'indian bank',
+  'indusind',
+  'yes bank',
+];
+
+const BANK_SENDER_PATTERNS = [
+  /^[A-Z]{2}-[A-Z]+BANK/i,     // e.g., AD-SBIBANK
+  /^[A-Z]{2}-[A-Z]{3,6}/i,     // e.g., VM-HDFC
+  /^(?!SPAM)[A-Z]{2,6}-\d{1,6}$/i,  // e.g., HDFC-123, but not SPAM-123
+  /^[A-Z]{2,6}\d{6}$/i,        // e.g., HDFC000123
+  /^[A-Z]{2,6}-[A-Z]{2,6}$/i,  // e.g., SBI-BANK
+];
+
+const isBankSMS = (message: string, sender: string): boolean => {
+  // Convert message to lowercase for case-insensitive matching
+  const lowerMessage = message.toLowerCase();
+  
+  // First check if the sender matches bank patterns
+  const isBankSender = BANK_SENDER_PATTERNS.some(pattern => pattern.test(sender));
+  
+  // Check if the sender contains any bank name
+  const containsBankName = BANK_NAMES.some(bank => 
+    sender.toLowerCase().includes(bank.toLowerCase())
+  );
+  
+  // Check if message contains transaction-related keywords
+  const containsTransactionKeywords = BANK_KEYWORDS.some(keyword => 
+    lowerMessage.includes(keyword.toLowerCase())
+  );
+  
+  // Check if message contains amount patterns (₹ or INR followed by numbers)
+  const containsAmountPattern = /(?:(?:rs|inr|₹)\s*\.?\s*[,\d]+(?:\.\d{2})?)/i.test(message);
+  
+  // Message should have either:
+  // 1. A bank sender pattern AND (transaction keywords OR amount pattern)
+  // 2. A known bank name in sender AND (transaction keywords OR amount pattern)
+  return (
+    (isBankSender || containsBankName) && 
+    (containsTransactionKeywords || containsAmountPattern)
+  );
+};
+
+// Add this helper function to extract amount from message
+const extractAmount = (message: string): string | null => {
+  const amountMatch = message.match(/(?:(?:rs|inr|₹)\s*\.?\s*[,\d]+(?:\.\d{2})?)/i);
+  return amountMatch ? amountMatch[0] : null;
+};
+
 const App: React.FC = () => {
   const [receiveSmsPermission, setReceiveSmsPermission] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [appState, setAppState] = useState<AppStateStatus>(
     AppState.currentState,
   );
+  const [permissionStatus, setPermissionStatus] = useState<{
+    sms: boolean;
+    notifications: boolean;
+  }>({
+    sms: false,
+    notifications: false,
+  });
+
+  const requestSMSPermission = async (): Promise<boolean> => {
+    try {
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECEIVE_SMS,
+        {
+          title: 'SMS Permission',
+          message: 'This app needs access to read SMS messages.',
+          buttonPositive: 'Allow',
+          buttonNegative: 'Deny',
+        }
+      );
+      
+      const granted = result === PermissionsAndroid.RESULTS.GRANTED;
+      setPermissionStatus(prev => ({...prev, sms: granted}));
+      console.log('SMS permission:', granted ? 'granted' : 'denied');
+      return granted;
+    } catch (err) {
+      console.error('SMS permission error:', err);
+      return false;
+    }
+  };
+
+  const requestNotificationPermission = async (): Promise<boolean> => {
+    try {
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+        {
+          title: 'Notification Permission',
+          message: 'This app needs to send notifications for new messages.',
+          buttonPositive: 'Allow',
+          buttonNegative: 'Deny',
+        }
+      );
+      
+      const granted = result === PermissionsAndroid.RESULTS.GRANTED;
+      setPermissionStatus(prev => ({...prev, notifications: granted}));
+      console.log('Notification permission:', granted ? 'granted' : 'denied');
+      return granted;
+    } catch (err) {
+      console.error('Notification permission error:', err);
+      return false;
+    }
+  };
 
   const requestPermissions = async (): Promise<void> => {
     try {
-      // Request both SMS and notification permissions
-      const permissions = [
-        PermissionsAndroid.PERMISSIONS.RECEIVE_SMS,
-        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-      ];
+      const smsGranted = await requestSMSPermission();
+      const notificationGranted = await requestNotificationPermission();
 
-      const results = await PermissionsAndroid.requestMultiple(permissions);
-
-      // Check if both permissions are granted
-      const allGranted = Object.values(results).every(
-        result => result === PermissionsAndroid.RESULTS.GRANTED,
-      );
-
-      if (allGranted && Platform.OS === 'android') {
+      if (smsGranted && notificationGranted && Platform.OS === 'android') {
         setReceiveSmsPermission(PermissionsAndroid.RESULTS.GRANTED);
-        // Start the service only after both permissions are granted
         try {
           const {SmsListenerModule} = NativeModules;
           await SmsListenerModule.startBackgroundService();
@@ -53,13 +173,21 @@ const App: React.FC = () => {
           console.error('Error starting background service:', serviceError);
         }
       } else {
-        console.log('Some permissions were denied');
         setReceiveSmsPermission(PermissionsAndroid.RESULTS.DENIED);
       }
     } catch (err) {
       console.error('Permission error:', err);
       setReceiveSmsPermission(PermissionsAndroid.RESULTS.DENIED);
     }
+  };
+
+  // Add separate retry functions for each permission
+  const retrySMSPermission = () => {
+    requestSMSPermission();
+  };
+
+  const retryNotificationPermission = () => {
+    requestNotificationPermission();
   };
 
   const saveMessages = async (newMessages: Message[]): Promise<void> => {
@@ -84,7 +212,11 @@ const App: React.FC = () => {
       const storedMessages = await AsyncStorage.getItem('messages');
       if (storedMessages) {
         const parsedMessages = JSON.parse(storedMessages);
-        const sortedMessages = parsedMessages.sort(
+        // Filter out non-bank messages when loading
+        const bankMessages = parsedMessages.filter((msg: Message) => 
+          isBankSMS(msg.messageBody, msg.senderPhoneNumber)
+        );
+        const sortedMessages = bankMessages.sort(
           (a: Message, b: Message) =>
             new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
         );
@@ -127,13 +259,32 @@ const App: React.FC = () => {
         (message: string) => {
           try {
             const parsedMessage = JSON.parse(message);
-            const newMessage: Message = {
-              messageBody: parsedMessage.messageBody,
-              senderPhoneNumber: parsedMessage.senderPhoneNumber,
-              timestamp: new Date(parsedMessage.timestamp).toISOString(),
-            };
+            const amount = extractAmount(parsedMessage.messageBody);
+            
+            console.log('Processing SMS:', {
+              sender: parsedMessage.senderPhoneNumber,
+              message: parsedMessage.messageBody,
+              amount: amount,
+            });
+            
+            if (isBankSMS(parsedMessage.messageBody, parsedMessage.senderPhoneNumber)) {
+              const newMessage: Message = {
+                messageBody: parsedMessage.messageBody,
+                senderPhoneNumber: parsedMessage.senderPhoneNumber,
+                timestamp: new Date(parsedMessage.timestamp).toISOString(),
+              };
 
-            saveMessages([newMessage]);
+              saveMessages([newMessage]);
+              console.log('✅ Saved bank SMS:', {
+                sender: newMessage.senderPhoneNumber,
+                amount: amount,
+              });
+            } else {
+              console.log('❌ Ignored non-bank SMS:', {
+                sender: parsedMessage.senderPhoneNumber,
+                reason: 'Did not match bank criteria',
+              });
+            }
           } catch (err) {
             console.error('Error processing message:', err);
           }
@@ -165,9 +316,32 @@ const App: React.FC = () => {
       <View style={styles.header}>
         <Text style={styles.titleText}>SMS Inbox</Text>
         {receiveSmsPermission !== PermissionsAndroid.RESULTS.GRANTED && (
-          <Text style={styles.permissionText}>
-            SMS and notification permissions are required
-          </Text>
+          <View>
+            {!permissionStatus.sms && (
+              <View>
+                <Text style={styles.permissionText}>
+                  SMS permission is required
+                </Text>
+                <Text
+                  style={styles.retryText}
+                  onPress={retrySMSPermission}>
+                  Tap to allow SMS permission
+                </Text>
+              </View>
+            )}
+            {!permissionStatus.notifications && (
+              <View>
+                <Text style={styles.permissionText}>
+                  Notification permission is required
+                </Text>
+                <Text
+                  style={styles.retryText}
+                  onPress={retryNotificationPermission}>
+                  Tap to allow notifications
+                </Text>
+              </View>
+            )}
+          </View>
         )}
       </View>
       <FlatList
@@ -244,6 +418,14 @@ const styles = StyleSheet.create({
     color: '#95a5a6',
     marginTop: 8,
     textAlign: 'right',
+  },
+  retryText: {
+    color: '#3498db',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });
 
