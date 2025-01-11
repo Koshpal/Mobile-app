@@ -5,6 +5,9 @@ import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import android.os.Bundle
+import android.content.Intent
+import com.facebook.react.modules.core.DeviceEventManagerModule
 
 class MainActivity : ReactActivity() {
 
@@ -20,4 +23,23 @@ class MainActivity : ReactActivity() {
    */
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    handleIncomingSmsData(intent)
+  }
+
+  override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+    handleIncomingSmsData(intent)
+  }
+
+  private fun handleIncomingSmsData(intent: Intent?) {
+    intent?.getStringExtra("sms_data")?.let { messageJson ->
+      // Send event to React Native
+      val reactContext = this.reactNativeHost.reactInstanceManager.currentReactContext
+      reactContext?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        ?.emit("onSMSReceived", messageJson)
+    }
+  }
 }

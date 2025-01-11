@@ -37,5 +37,14 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <receiver
+            android:name=".SmsReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="SMS_RECEIVED_ACTION" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

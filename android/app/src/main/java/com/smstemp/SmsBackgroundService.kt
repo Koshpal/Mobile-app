@@ -113,10 +113,15 @@ class SmsBackgroundService : Service() {
                                     val messageJson = JSONObject().apply {
                                         put("messageBody", sms.displayMessageBody ?: "Unknown message body")
                                         put("senderPhoneNumber", sms.originatingAddress ?: "Unknown sender")
-                                        put("timestamp", sms.timestampMillis)
+                                        put("timestamp", System.currentTimeMillis())
                                     }.toString()
 
                                     saveMessage(messageJson)
+                                    
+                                    val broadcastIntent = Intent("SMS_RECEIVED_ACTION")
+                                    broadcastIntent.putExtra("sms_data", messageJson)
+                                    sendBroadcast(broadcastIntent)
+
                                     showMessageNotification(
                                         sms.originatingAddress ?: "Unknown sender",
                                         sms.displayMessageBody ?: "No message content"
@@ -125,13 +130,12 @@ class SmsBackgroundService : Service() {
                             }
                         } catch (e: Exception) {
                             Log.e("SmsBackgroundService", "Error processing SMS: ${e.message}")
+                            e.printStackTrace()
                         }
                     }
                 }
 
-                val filter = IntentFilter("android.provider.Telephony.SMS_RECEIVED").apply {
-                    priority = IntentFilter.SYSTEM_HIGH_PRIORITY
-                }
+                val filter = IntentFilter("android.provider.Telephony.SMS_RECEIVED")
                 registerReceiver(smsReceiver, filter)
                 Log.d("SmsBackgroundService", "SMS receiver registered successfully")
             } catch (e: Exception) {
@@ -162,18 +166,19 @@ class SmsBackgroundService : Service() {
 
     private fun saveMessage(messageJson: String) {
         try {
-            val prefs = getSharedPreferences("SmsStorage", Context.MODE_PRIVATE)
+            val prefs = getSharedPreferences("SmsMessages", Context.MODE_PRIVATE)
             val messagesStr = prefs.getString("messages", "[]") ?: "[]"
             val messagesArray = JSONArray(messagesStr)
             messagesArray.put(JSONObject(messageJson))
 
             prefs.edit().apply {
                 putString("messages", messagesArray.toString())
-                apply()
+                commit()
             }
-            Log.d("SmsBackgroundService", "Message saved successfully")
+            Log.d("SmsBackgroundService", "Message saved successfully: $messageJson")
         } catch (e: Exception) {
             Log.e("SmsBackgroundService", "Error saving message: ${e.message}")
+            e.printStackTrace()
         }
     }
 

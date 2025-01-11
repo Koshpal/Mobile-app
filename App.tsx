@@ -14,12 +14,15 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// interface of how message will be stored in the app
 type Message = {
   messageBody: string;
   senderPhoneNumber: string;
   timestamp: string;
+  amount: string;
 };
 
+// keywords to identify bank messages
 const BANK_KEYWORDS = [
   'credited',
   'debited',
@@ -39,6 +42,7 @@ const BANK_KEYWORDS = [
   'rtgs',
 ];
 
+// bank names to identify bank messages
 const BANK_NAMES = [
   'sbi',
   'hdfc',
@@ -57,6 +61,7 @@ const BANK_NAMES = [
   'yes bank',
 ];
 
+// bank sender patterns to identify bank messages
 const BANK_SENDER_PATTERNS = [
   /^[A-Z]{2}-[A-Z]+BANK/i,     // e.g., AD-SBIBANK
   /^[A-Z]{2}-[A-Z]{3,6}/i,     // e.g., VM-HDFC
@@ -65,6 +70,7 @@ const BANK_SENDER_PATTERNS = [
   /^[A-Z]{2,6}-[A-Z]{2,6}$/i,  // e.g., SBI-BANK
 ];
 
+// function to check if a message is a bank message
 const isBankSMS = (message: string, sender: string): boolean => {
   // Convert message to lowercase for case-insensitive matching
   const lowerMessage = message.toLowerCase();
@@ -94,18 +100,21 @@ const isBankSMS = (message: string, sender: string): boolean => {
   );
 };
 
-// Add this helper function to extract amount from message
+// function to extract amount from message
 const extractAmount = (message: string): string | null => {
   const amountMatch = message.match(/(?:(?:rs|inr|₹)\s*\.?\s*[,\d]+(?:\.\d{2})?)/i);
   return amountMatch ? amountMatch[0] : null;
 };
 
+// main app component
 const App: React.FC = () => {
+  // state variables
   const [receiveSmsPermission, setReceiveSmsPermission] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [appState, setAppState] = useState<AppStateStatus>(
     AppState.currentState,
   );
+  // state variables to track permission status
   const [permissionStatus, setPermissionStatus] = useState<{
     sms: boolean;
     notifications: boolean;
@@ -114,6 +123,7 @@ const App: React.FC = () => {
     notifications: false,
   });
 
+  // function to request SMS permission
   const requestSMSPermission = async (): Promise<boolean> => {
     try {
       const result = await PermissionsAndroid.request(
@@ -136,6 +146,7 @@ const App: React.FC = () => {
     }
   };
 
+  // function to request notification permission
   const requestNotificationPermission = async (): Promise<boolean> => {
     try {
       const result = await PermissionsAndroid.request(
@@ -158,6 +169,7 @@ const App: React.FC = () => {
     }
   };
 
+  // function to request both SMS and notification permissions
   const requestPermissions = async (): Promise<void> => {
     try {
       const smsGranted = await requestSMSPermission();
@@ -190,6 +202,7 @@ const App: React.FC = () => {
     requestNotificationPermission();
   };
 
+  // function to save messages to AsyncStorage
   const saveMessages = async (newMessages: Message[]): Promise<void> => {
     try {
       const storedMessages = await AsyncStorage.getItem('messages');
@@ -207,31 +220,40 @@ const App: React.FC = () => {
     }
   };
 
+  // function to load messages from AsyncStorage
   const loadMessages = async (): Promise<void> => {
     try {
-      const storedMessages = await AsyncStorage.getItem('messages');
-      if (storedMessages) {
-        const parsedMessages = JSON.parse(storedMessages);
-        // Filter out non-bank messages when loading
-        const bankMessages = parsedMessages.filter((msg: Message) => 
-          isBankSMS(msg.messageBody, msg.senderPhoneNumber)
-        );
-        const sortedMessages = bankMessages.sort(
-          (a: Message, b: Message) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-        );
-        setMessages(sortedMessages);
-      }
+      // Load messages from SharedPreferences
+      const storedMessages = await NativeModules.SmsListenerModule.loadStoredMessages();
+      const parsedMessages = JSON.parse(storedMessages);
+      
+      // Filter bank messages
+      const bankMessages = parsedMessages.filter((msg: Message) => 
+        isBankSMS(msg.messageBody, msg.senderPhoneNumber)
+      );
+      
+      // Sort messages by timestamp
+      const sortedMessages = bankMessages.sort(
+        (a: Message, b: Message) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      
+      // Update state
+      setMessages(sortedMessages);
+      
+      // Also save to AsyncStorage for backup
+      await AsyncStorage.setItem('messages', JSON.stringify(parsedMessages));
+      
     } catch (err) {
-      console.error('Load error:', err);
+      console.error('Error loading messages:', err);
     }
   };
 
-  // Handle app state changes
+  // function to handle app state changes and load messages when app becomes active
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
-      if (appState.match(/inactive|background/) && nextAppState === 'active') {
-        loadMessages();
+      if (nextAppState === 'active') {
+        loadMessages(); // Load messages whenever app becomes active
       }
       setAppState(nextAppState);
     });
@@ -241,7 +263,7 @@ const App: React.FC = () => {
     };
   }, [appState]);
 
-  // Initial setup
+  // function to initialize the app and request permissions
   useEffect(() => {
     const initializeApp = async () => {
       await requestPermissions();
@@ -251,45 +273,47 @@ const App: React.FC = () => {
     initializeApp();
   }, []);
 
-  // SMS listener setup
+  // function to setup SMS listener
   useEffect(() => {
     if (receiveSmsPermission === PermissionsAndroid.RESULTS.GRANTED) {
-      const subscriber = DeviceEventEmitter.addListener(
-        'onSMSReceived',
-        (message: string) => {
-          try {
-            const parsedMessage = JSON.parse(message);
-            const amount = extractAmount(parsedMessage.messageBody);
-            
-            console.log('Processing SMS:', {
-              sender: parsedMessage.senderPhoneNumber,
-              message: parsedMessage.messageBody,
-              amount: amount,
-            });
-            
-            if (isBankSMS(parsedMessage.messageBody, parsedMessage.senderPhoneNumber)) {
-              const newMessage: Message = {
-                messageBody: parsedMessage.messageBody,
-                senderPhoneNumber: parsedMessage.senderPhoneNumber,
-                timestamp: new Date(parsedMessage.timestamp).toISOString(),
-              };
+      const handleSMS = (message: string) => {
+        try {
+          const parsedMessage = JSON.parse(message);
 
-              saveMessages([newMessage]);
-              console.log('✅ Saved bank SMS:', {
-                sender: newMessage.senderPhoneNumber,
-                amount: amount,
-              });
-            } else {
-              console.log('❌ Ignored non-bank SMS:', {
-                sender: parsedMessage.senderPhoneNumber,
-                reason: 'Did not match bank criteria',
-              });
-            }
-          } catch (err) {
-            console.error('Error processing message:', err);
+          if (isBankSMS(parsedMessage.messageBody, parsedMessage.senderPhoneNumber)) {
+            const amount = extractAmount(parsedMessage.messageBody) || '0';
+            const newMessage: Message = {
+              messageBody: parsedMessage.messageBody,
+              senderPhoneNumber: parsedMessage.senderPhoneNumber,
+              timestamp: new Date(parsedMessage.timestamp).toISOString(),
+              amount: amount,
+            };
+            console.log('Processing bank SMS:', newMessage);
+            saveMessages([newMessage]);
+          } else {
+            console.log('SMS ignored - not a bank message');
           }
-        },
-      );
+        } catch (err) {
+          console.error('Error processing message:', err);
+        }
+      };
+
+      // Listen for SMS events
+      const subscriber = DeviceEventEmitter.addListener('onSMSReceived', handleSMS);
+
+      // Check if app was launched with SMS data
+      const checkLaunchData = async () => {
+        try {
+          const initialMessage = await NativeModules.SmsListenerModule.getInitialSmsData();
+          if (initialMessage) {
+            handleSMS(initialMessage);
+          }
+        } catch (err) {
+          console.error('Error checking launch data:', err);
+        }
+      };
+
+      checkLaunchData();
 
       return () => {
         subscriber.remove();
@@ -297,6 +321,7 @@ const App: React.FC = () => {
     }
   }, [receiveSmsPermission]);
 
+  // function to render a message item
   const renderItem = ({item}: {item: Message}) => (
     <View style={styles.messageContainer}>
       <Text style={styles.senderText}>{item.senderPhoneNumber}</Text>
@@ -307,14 +332,15 @@ const App: React.FC = () => {
     </View>
   );
 
+  // function to render an empty component
   const renderEmptyComponent = () => (
-    <Text style={styles.noMessagesText}>No messages yet!</Text>
+    <Text style={styles.noMessagesText}>No bank messages yet!</Text>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.titleText}>SMS Inbox</Text>
+        <Text style={styles.titleText}>Bank SMS Inbox</Text>
         {receiveSmsPermission !== PermissionsAndroid.RESULTS.GRANTED && (
           <View>
             {!permissionStatus.sms && (
@@ -355,6 +381,7 @@ const App: React.FC = () => {
   );
 };
 
+// styles for the app
 const styles = StyleSheet.create({
   container: {
     flex: 1,
