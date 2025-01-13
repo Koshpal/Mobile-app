@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.os.Build
 import android.os.IBinder
 import android.provider.Telephony
@@ -110,57 +111,109 @@ class SmsBackgroundService : Service() {
                         try {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                                 for (sms in Telephony.Sms.Intents.getMessagesFromIntent(intent)) {
-                                    val messageJson = JSONObject().apply {
-                                        put("messageBody", sms.displayMessageBody ?: "Unknown message body")
-                                        put("senderPhoneNumber", sms.originatingAddress ?: "Unknown sender")
-                                        put("timestamp", System.currentTimeMillis())
-                                    }.toString()
+                                    val sender = sms.originatingAddress ?: "Unknown sender"
+                                    val message = sms.displayMessageBody ?: "No message content"
 
-                                    saveMessage(messageJson)
-                                    
-                                    val broadcastIntent = Intent("SMS_RECEIVED_ACTION")
-                                    broadcastIntent.putExtra("sms_data", messageJson)
-                                    sendBroadcast(broadcastIntent)
+                                    // First log the received SMS
+                                    Log.d("SmsBackgroundService", """
+                                        |SMS Received:
+                                        |From: $sender
+                                        |Message: $message
+                                        |-------------------
+                                    """.trimMargin())
 
-                                    showMessageNotification(
-                                        sms.originatingAddress ?: "Unknown sender",
-                                        sms.displayMessageBody ?: "No message content"
-                                    )
+                                    // Check if it's a bank SMS
+                                    if (BankSmsUtils.isBankSMS(message, sender)) {
+                                        Log.i("SmsBackgroundService", "Bank SMS detected!")
+
+                                        // Create JSON for bank SMS
+                                        val messageJson = JSONObject().apply {
+                                            put("messageBody", message)
+                                            put("senderPhoneNumber", sender)
+                                            put("timestamp", System.currentTimeMillis())
+                                        }.toString()
+
+                                        // Show notification for bank SMS
+                                        showBankSmsNotification(sender, message)
+
+                                        // Send to React Native via broadcast
+                                        Intent("onSMSReceived").also { broadcastIntent ->
+                                            broadcastIntent.putExtra("sms_data", messageJson)
+                                            sendBroadcast(broadcastIntent)
+                                            Log.i("SmsBackgroundService", "Bank SMS broadcast sent: $messageJson")
+                                        }
+
+                                        // Save the bank SMS
+                                        saveMessage(messageJson)
+                                    } else {
+                                        Log.d("SmsBackgroundService", "Ignored non-bank SMS")
+                                    }
                                 }
                             }
                         } catch (e: Exception) {
-                            Log.e("SmsBackgroundService", "Error processing SMS: ${e.message}")
-                            e.printStackTrace()
+                            Log.e("SmsBackgroundService", "Error processing SMS", e)
                         }
                     }
                 }
 
                 val filter = IntentFilter("android.provider.Telephony.SMS_RECEIVED")
                 registerReceiver(smsReceiver, filter)
-                Log.d("SmsBackgroundService", "SMS receiver registered successfully")
+                Log.i("SmsBackgroundService", "SMS receiver registered successfully")
             } catch (e: Exception) {
-                Log.e("SmsBackgroundService", "Error registering SMS receiver: ${e.message}")
-                throw e
+                Log.e("SmsBackgroundService", "Error registering SMS receiver", e)
             }
         }
     }
 
-    private fun showMessageNotification(sender: String, message: String) {
+    private fun showBankSmsNotification(sender: String, message: String) {
         try {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val notificationId = System.currentTimeMillis().toInt()
+            
+            // Create notification channel for Android O and above
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    "bank_sms_channel",
+                    "Bank SMS Notifications",
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Notifications for bank SMS messages"
+                    enableLights(true)
+                    lightColor = Color.BLUE
+                    enableVibration(true)
+                }
+                notificationManager.createNotificationChannel(channel)
+            }
 
-            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("New SMS from $sender")
+            // Create intent to open app when notification is clicked
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                packageManager.getLaunchIntentForPackage(packageName),
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                } else {
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                }
+            )
+
+            // Build the notification
+            val notification = NotificationCompat.Builder(this, "bank_sms_channel")
+                .setContentTitle("New Bank SMS from $sender")
                 .setContentText(message)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(message))
                 .build()
 
+            // Show the notification
+            val notificationId = System.currentTimeMillis().toInt()
             notificationManager.notify(notificationId, notification)
+            
+            Log.i("SmsBackgroundService", "Bank SMS notification shown")
         } catch (e: Exception) {
-            Log.e("SmsBackgroundService", "Error showing message notification: ${e.message}")
+            Log.e("SmsBackgroundService", "Error showing notification: ${e.message}")
         }
     }
 
@@ -173,12 +226,11 @@ class SmsBackgroundService : Service() {
 
             prefs.edit().apply {
                 putString("messages", messagesArray.toString())
-                commit()
+                apply()
             }
-            Log.d("SmsBackgroundService", "Message saved successfully: $messageJson")
+            Log.i("SmsBackgroundService", "Bank SMS saved successfully")
         } catch (e: Exception) {
-            Log.e("SmsBackgroundService", "Error saving message: ${e.message}")
-            e.printStackTrace()
+            Log.e("SmsBackgroundService", "Error saving message", e)
         }
     }
 
