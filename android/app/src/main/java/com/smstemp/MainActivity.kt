@@ -8,6 +8,8 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 import android.os.Bundle
 import android.content.Intent
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import android.util.Log
+import com.facebook.react.bridge.WritableNativeMap
 
 class MainActivity : ReactActivity() {
 
@@ -26,20 +28,36 @@ class MainActivity : ReactActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    handleIncomingSmsData(intent)
+    handleIntent(intent)
   }
 
   override fun onNewIntent(intent: Intent?) {
     super.onNewIntent(intent)
-    handleIncomingSmsData(intent)
+    handleIntent(intent)
   }
 
-  private fun handleIncomingSmsData(intent: Intent?) {
-    intent?.getStringExtra("sms_data")?.let { messageJson ->
+  private fun handleIntent(intent: Intent?) {
+    if (intent?.action == "EDIT_TRANSACTION") {
+      val amount = intent.getStringExtra("amount") ?: ""
+      val type = intent.getStringExtra("type") ?: ""
+      val sender = intent.getStringExtra("sender") ?: ""
+      val message = intent.getStringExtra("message") ?: ""
+      
       // Send event to React Native
-      val reactContext = this.reactNativeHost.reactInstanceManager.currentReactContext
-      reactContext?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-        ?.emit("onSMSReceived", messageJson)
+      val eventData = WritableNativeMap().apply {
+        putString("amount", amount)
+        putString("type", type)
+        putString("sender", sender)
+        putString("message", message)
+        putBoolean("fromNotification", true)
+      }
+
+      // Emit event to React Native
+      reactInstanceManager?.currentReactContext
+        ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        ?.emit("openTransactionEdit", eventData)
+
+      Log.d("MainActivity", "Sent transaction edit event to RN: $eventData")
     }
   }
 }

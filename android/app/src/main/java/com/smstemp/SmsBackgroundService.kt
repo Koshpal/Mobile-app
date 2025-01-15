@@ -167,9 +167,27 @@ class SmsBackgroundService : Service() {
 
     private fun showBankSmsNotification(sender: String, message: String) {
         try {
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val transactionInfo = BankSmsUtils.extractTransactionInfo(message)
+            val notificationId = System.currentTimeMillis().toInt()
             
-            // Create notification channel for Android O and above
+            // Create intent to open transaction edit screen
+            val editIntent = Intent(this, TransactionEditActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("amount", transactionInfo?.amount ?: "")
+                putExtra("type", transactionInfo?.type ?: "unknown")
+                putExtra("message", message)
+                putExtra("notification_id", notificationId)  // Pass notification ID
+            }
+
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                notificationId,  // Use same ID for request code
+                editIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or 
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+            )
+
+            // Create notification channel
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     "bank_sms_channel",
@@ -181,37 +199,26 @@ class SmsBackgroundService : Service() {
                     lightColor = Color.BLUE
                     enableVibration(true)
                 }
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.createNotificationChannel(channel)
             }
 
-            // Create intent to open app when notification is clicked
-            val pendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                packageManager.getLaunchIntentForPackage(packageName),
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                } else {
-                    PendingIntent.FLAG_UPDATE_CURRENT
-                }
-            )
+            // Build and show notification
+            val notificationTitle = "New ${transactionInfo?.type?.capitalize()} Transaction"
+            val notificationText = "${transactionInfo?.amount ?: "Amount unknown"} - Click to add details"
 
-            // Build the notification
             val notification = NotificationCompat.Builder(this, "bank_sms_channel")
-                .setContentTitle("New Bank SMS from $sender")
-                .setContentText(message)
+                .setContentTitle(notificationTitle)
+                .setContentText(notificationText)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(message))
                 .build()
 
-            // Show the notification
-            val notificationId = System.currentTimeMillis().toInt()
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(notificationId, notification)
-            
-            Log.i("SmsBackgroundService", "Bank SMS notification shown")
+
         } catch (e: Exception) {
             Log.e("SmsBackgroundService", "Error showing notification: ${e.message}")
         }

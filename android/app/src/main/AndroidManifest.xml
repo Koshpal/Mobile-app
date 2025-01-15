@@ -30,7 +30,17 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="EDIT_TRANSACTION" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
+
+        <activity
+            android:name=".TransactionEditActivity"
+            android:exported="false"
+            android:label="Edit Transaction"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar"/>
 
         <service
             android:name=".SmsBackgroundService"

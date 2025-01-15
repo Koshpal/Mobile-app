@@ -7,7 +7,7 @@ object BankSmsUtils {
     private val BANK_SENDERS = listOf(
         "HDFCBK", "SBIINB", "ICICIB", "AXISBK", "KOTAK", "PNBSMS",
         "SCBANK", "BOIIND", "CANBNK", "UNIONB", "CENTBK", "BOBIBN",
-        "IDBIBK", "YESBNK", "INDBNK"
+        "IDBIBK", "YESBNK", "INDBNK", "EQUITAS"
     ).map { it.lowercase() }
 
     // Transaction keywords
@@ -29,6 +29,12 @@ object BankSmsUtils {
 
     // Amount pattern regex
     private val AMOUNT_PATTERN = Regex("(?:(?:rs|inr|₹)\\s*\\.?\\s*[,\\d]+(?:\\.\\d{2})?)", RegexOption.IGNORE_CASE)
+
+    data class TransactionInfo(
+        val amount: String,
+        val type: String,
+        val rawMessage: String
+    )
 
     fun isBankSMS(message: String, sender: String): Boolean {
         try {
@@ -85,6 +91,38 @@ object BankSmsUtils {
             return amountMatch?.value
         } catch (e: Exception) {
             Log.e("BankSmsUtils", "Error extracting amount: ${e.message}")
+            return null
+        }
+    }
+
+    fun extractTransactionInfo(message: String): TransactionInfo? {
+        try {
+            val messageLower = message.lowercase()
+            
+            // Extract amount
+            val amount = AMOUNT_PATTERN.find(message)?.value ?: return null
+
+            // Determine transaction type
+            val type = when {
+                messageLower.contains("credited") || 
+                messageLower.contains("received") || 
+                messageLower.contains("deposit") -> "credited"
+                
+                messageLower.contains("debited") || 
+                messageLower.contains("spent") || 
+                messageLower.contains("sent") || 
+                messageLower.contains("withdrawal") -> "debited"
+                
+                else -> "unknown"
+            }
+
+            return TransactionInfo(
+                amount = amount,
+                type = type,
+                rawMessage = message
+            )
+        } catch (e: Exception) {
+            Log.e("BankSmsUtils", "Error extracting transaction info: ${e.message}")
             return null
         }
     }
