@@ -87,7 +87,7 @@ class TransactionEditActivity : AppCompatActivity() {
                 try {
                     val request = Request.Builder()
                         // Change this to the actual IP address of the machine
-                        .url("http://192.168.0.116:8080/printBody")
+                        .url("http://192.168.0.101:8080/printBody")
                         .post(jsonBody.toString().toRequestBody(JSON))
                         .build()
 

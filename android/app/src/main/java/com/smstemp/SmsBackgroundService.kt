@@ -136,15 +136,17 @@ class SmsBackgroundService : Service() {
                                         // Show notification for bank SMS
                                         showBankSmsNotification(sender, message)
 
-                                        // Send to React Native via broadcast
-                                        Intent("onSMSReceived").also { broadcastIntent ->
-                                            broadcastIntent.putExtra("sms_data", messageJson)
-                                            sendBroadcast(broadcastIntent)
-                                            Log.i("SmsBackgroundService", "Bank SMS broadcast sent: $messageJson")
+                                        // Send to React Native via broadcast only when sms is a bank sms
+                                        if(BankSmsUtils.isBankSMS(message, sender)){
+                                            Intent("onSMSReceived").also { broadcastIntent ->
+                                                broadcastIntent.putExtra("sms_data", messageJson)
+                                                sendBroadcast(broadcastIntent)
+                                                Log.i("SmsBackgroundService", "Bank SMS broadcast sent: $messageJson")
+                                            }
+                                            
+                                            // Save the bank SMS
+                                            saveMessage(messageJson)
                                         }
-
-                                        // Save the bank SMS
-                                        saveMessage(messageJson)
                                     } else {
                                         Log.d("SmsBackgroundService", "Ignored non-bank SMS")
                                     }

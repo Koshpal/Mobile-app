@@ -96,7 +96,7 @@ const isBankSMS = (message: string, sender: string): boolean => {
   // 2. A known bank name in sender AND (transaction keywords OR amount pattern)
   return (
     (isBankSender || containsBankName) &&
-    (containsTransactionKeywords || containsAmountPattern)
+    (containsTransactionKeywords)
   );
 };
 

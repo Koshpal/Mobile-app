@@ -61,7 +61,11 @@ class SmsListenerModule(private val reactContext: ReactApplicationContext) :
                                 putString("senderPhoneNumber", sms.originatingAddress)
                                 putDouble("timestamp", sms.timestampMillis.toDouble())
                             }
-                            sendEvent("onSMSReceived", params.toString())
+                            val messageBody = sms.displayMessageBody ?: return
+                            val senderPhoneNumber = sms.originatingAddress ?: return
+                            if(BankSmsUtils.isBankSMS(messageBody, senderPhoneNumber)) {
+                                sendEvent("onSMSReceived", params.toString())
+                            }
                         }
                     }
                 } catch (e: Exception) {
