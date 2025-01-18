@@ -32,6 +32,9 @@ object BankSmsUtils {
         "(?:(?:rs|inr|₹)\\s*\\.?\\s*[\\d,]+(?:\\.\\d{1,2})?)", RegexOption.IGNORE_CASE
     )
 
+    // Pattern to detect 12-digit numbers (like account numbers)
+    private val ACCOUNT_NUMBER_PATTERN = Regex("\\b\\d{12}\\b")
+
     // Data class to encapsulate transaction details
     data class TransactionInfo(
         val amount: String,
@@ -40,7 +43,7 @@ object BankSmsUtils {
     )
 
     /**
-     * Check if a given SMS is likely a bank SMS based on sender and message content.
+     * Check if a given SMS is likely a bank SMS based on sender, message content, and account numbers.
      */
     fun isBankSMS(message: String, sender: String): Boolean {
         val senderLower = sender.lowercase()
@@ -54,19 +57,22 @@ object BankSmsUtils {
             val isBankSender = BANK_SENDER_PATTERNS.any { it.matches(sender) }
             val containsBankName = BANK_SENDERS.any { senderLower.contains(it) }
 
+            // Check for 12-digit numbers (potential account numbers)
+            val contains12DigitNumber = ACCOUNT_NUMBER_PATTERN.containsMatchIn(message)
+
             // Check message content for keywords or amounts
             val containsKeywords = BANK_KEYWORDS.any { messageLower.contains(it) }
             val containsAmount = AMOUNT_PATTERN.containsMatchIn(message)
 
-            // Determine if it's a bank SMS
-            val isBankMessage = (isBankSender || containsBankName) &&
-                                (containsKeywords)
+            // Determine if it's a bank SMS - now including 12-digit number check
+            val isBankMessage = (isBankSender || containsBankName || contains12DigitNumber)
 
             Log.d("BankSmsUtils", """
                 SMS Analysis:
                 Sender: $sender
                 Is Bank Sender: $isBankSender
                 Contains Bank Name: $containsBankName
+                Contains 12-digit Number: $contains12DigitNumber
                 Contains Keywords: $containsKeywords
                 Contains Amount: $containsAmount
                 Is Bank Message: $isBankMessage
@@ -124,5 +130,14 @@ object BankSmsUtils {
             Log.e("BankSmsUtils", "Error extracting transaction info: ${e.message}")
             return null
         }
+    }
+
+    /**
+     * Extract 12-digit numbers from the message
+     */
+    fun extractAccountNumbers(message: String): List<String> {
+        return ACCOUNT_NUMBER_PATTERN.findAll(message)
+            .map { it.value }
+            .toList()
     }
 }

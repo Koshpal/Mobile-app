@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -13,7 +13,7 @@ import {
   AppStateStatus,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import VisualInsights from './src/components/VisualInsights';
 // interface of how message will be stored in the app
 type Message = {
   messageBody: string;
@@ -89,7 +89,7 @@ const isBankSMS = (message: string, sender: string): boolean => {
   );
 
   // Check if message contains amount patterns (₹ or INR followed by numbers)
-  const containsAmountPattern = /(?:(?:rs|inr|₹)\s*\.?\s*[,\d]+(?:\.\d{2})?)/i.test(message);
+  // const containsAmountPattern = /(?:(?:rs|inr|₹)\s*\.?\s*[,\d]+(?:\.\d{2})?)/i.test(message);
 
   // Message should have either:
   // 1. A bank sender pattern AND (transaction keywords OR amount pattern)
@@ -137,7 +137,7 @@ const App: React.FC = () => {
       );
 
       const granted = result === PermissionsAndroid.RESULTS.GRANTED;
-      setPermissionStatus(prev => ({...prev, sms: granted}));
+      setPermissionStatus(prev => ({ ...prev, sms: granted }));
       console.log('SMS permission:', granted ? 'granted' : 'denied');
       return granted;
     } catch (err) {
@@ -160,7 +160,7 @@ const App: React.FC = () => {
       );
 
       const granted = result === PermissionsAndroid.RESULTS.GRANTED;
-      setPermissionStatus(prev => ({...prev, notifications: granted}));
+      setPermissionStatus(prev => ({ ...prev, notifications: granted }));
       console.log('Notification permission:', granted ? 'granted' : 'denied');
       return granted;
     } catch (err) {
@@ -178,7 +178,7 @@ const App: React.FC = () => {
       if (smsGranted && notificationGranted && Platform.OS === 'android') {
         setReceiveSmsPermission(PermissionsAndroid.RESULTS.GRANTED);
         try {
-          const {SmsListenerModule} = NativeModules;
+          const { SmsListenerModule } = NativeModules;
           await SmsListenerModule.startBackgroundService();
           console.log('Background service started successfully');
         } catch (serviceError) {
@@ -270,7 +270,8 @@ const App: React.FC = () => {
     };
 
     initializeApp();
-  },[]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // function to setup SMS listener
   useEffect(() => {
@@ -287,7 +288,7 @@ const App: React.FC = () => {
               timestamp: new Date(parsedMessage.timestamp).toISOString(),
               amount: amount,
             };
-            console.log('Processing bank SMS:', newMessage);
+            // console.log('Processing bank SMS:', newMessage);
             saveMessages([newMessage]);
           } else {
             console.log('SMS ignored - not a bank message');
@@ -321,7 +322,7 @@ const App: React.FC = () => {
   }, [receiveSmsPermission]);
 
   // function to render a message item
-  const renderItem = ({item}: {item: Message}) => (
+  const renderItem = ({ item }: { item: Message }) => (
     <View style={styles.messageContainer}>
       <Text style={styles.senderText}>{item.senderPhoneNumber}</Text>
       <Text style={styles.messageText}>{item.messageBody}</Text>
@@ -337,46 +338,52 @@ const App: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.titleText}>Bank SMS Inbox</Text>
-        {receiveSmsPermission !== PermissionsAndroid.RESULTS.GRANTED && (
-          <View>
-            {!permissionStatus.sms && (
-              <View>
-                <Text style={styles.permissionText}>
-                  SMS permission is required
-                </Text>
-                <Text
-                  style={styles.retryText}
-                  onPress={retrySMSPermission}>
-                  Tap to allow SMS permission
-                </Text>
-              </View>
-            )}
-            {!permissionStatus.notifications && (
-              <View>
-                <Text style={styles.permissionText}>
-                  Notification permission is required
-                </Text>
-                <Text
-                  style={styles.retryText}
-                  onPress={retryNotificationPermission}>
-                  Tap to allow notifications
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-      </View>
-      <FlatList
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => `${item.timestamp}-${index}`}
-        ListEmptyComponent={renderEmptyComponent}
-        contentContainerStyle={styles.listContent}
-      />
-    </SafeAreaView>
+    <>
+      <VisualInsights />
+
+      <SafeAreaView style={styles.container}>
+
+
+        <View style={styles.header}>
+          <Text style={styles.titleText}>Bank SMS Inbox</Text>
+          {receiveSmsPermission !== PermissionsAndroid.RESULTS.GRANTED && (
+            <View>
+              {!permissionStatus.sms && (
+                <View>
+                  <Text style={styles.permissionText}>
+                    SMS permission is required
+                  </Text>
+                  <Text
+                    style={styles.retryText}
+                    onPress={retrySMSPermission}>
+                    Tap to allow SMS permission
+                  </Text>
+                </View>
+              )}
+              {!permissionStatus.notifications && (
+                <View>
+                  <Text style={styles.permissionText}>
+                    Notification permission is required
+                  </Text>
+                  <Text
+                    style={styles.retryText}
+                    onPress={retryNotificationPermission}>
+                    Tap to allow notifications
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+        <FlatList
+          data={messages}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => `${item.timestamp}-${index}`}
+          ListEmptyComponent={renderEmptyComponent}
+          contentContainerStyle={styles.listContent}
+        />
+      </SafeAreaView>
+    </>
   );
 };
 

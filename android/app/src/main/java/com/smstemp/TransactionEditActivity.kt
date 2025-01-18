@@ -15,6 +15,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
 import kotlinx.coroutines.*
+import android.content.Intent
 
 class TransactionEditActivity : AppCompatActivity() {
     
@@ -43,13 +44,16 @@ class TransactionEditActivity : AppCompatActivity() {
         setContentView(R.layout.activity_transaction_edit)
 
         // Get data from intent
-        val amount = intent.getStringExtra("amount") ?: ""
+        val rawAmount = intent.getStringExtra("amount") ?: ""
         val type = intent.getStringExtra("type") ?: ""
         val message = intent.getStringExtra("message") ?: ""
         val notificationId = intent.getIntExtra("notification_id", -1)
 
+        // Extract numerical amount and currency
+        val (numericAmount, currency) = extractAmountAndCurrency(rawAmount)
+
         // Set up views
-        findViewById<TextView>(R.id.amountText).text = amount
+        findViewById<TextView>(R.id.amountText).text = "$currency $numericAmount"
         findViewById<TextView>(R.id.typeText).text = type
         findViewById<TextView>(R.id.messageText).text = message
 
@@ -74,12 +78,15 @@ class TransactionEditActivity : AppCompatActivity() {
 
             // Create JSON payload
             val jsonBody = JSONObject().apply {
-                put("amount", amount)
+                put("amount", numericAmount)  // Numerical part only
+                put("currency", currency)     // Currency identifier
                 put("type", type)
                 put("category", selectedCategory)
                 put("description", description)
                 put("originalMessage", message)
                 put("timestamp", System.currentTimeMillis())
+                put("phoneNumber", "9314635933")
+                put("accountNumber", BankSmsUtils.extractAccountNumbers(message))
             }
 
             // Make HTTP request
@@ -87,7 +94,8 @@ class TransactionEditActivity : AppCompatActivity() {
                 try {
                     val request = Request.Builder()
                         // Change this to the actual IP address of the machine
-                        .url("http://192.168.0.101:8080/printBody")
+                        .url("http://192.168.0.101:8080/messages")
+                        .header("Content-Type", "application/json")
                         .post(jsonBody.toString().toRequestBody(JSON))
                         .build()
 
@@ -95,12 +103,24 @@ class TransactionEditActivity : AppCompatActivity() {
                         client.newCall(request).execute().use { response ->
                             if (response.isSuccessful) {
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(
-                                        this@TransactionEditActivity,
-                                        "Transaction logged successfully",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    finish()
+                                    try {
+                                        // Send broadcast to React Native
+                                        val intent = Intent("onTransactionLogged").apply {
+                                            putExtra("transaction_data", jsonBody.toString())
+                                            addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
+                                        }
+                                        Log.d("TransactionEdit", "Broadcasting transaction data: ${jsonBody}")
+                                        sendBroadcast(intent)
+                                        
+                                        Toast.makeText(
+                                            this@TransactionEditActivity,
+                                            "Transaction logged successfully",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        finish()
+                                    } catch (e: Exception) {
+                                        Log.e("TransactionEdit", "Error broadcasting: ${e.message}")
+                                    }
                                 }
                             } else {
                                 throw IOException("Unexpected response ${response.code}")
@@ -122,7 +142,7 @@ class TransactionEditActivity : AppCompatActivity() {
             // Log locally as well
             Log.i("TransactionEdit", """
                 Transaction Details:
-                Amount: $amount
+                Amount: $currency $numericAmount
                 Type: $type
                 Category: $selectedCategory
                 Description: $description
@@ -135,6 +155,54 @@ class TransactionEditActivity : AppCompatActivity() {
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
             notificationManager.cancel(notificationId)
         }
+    }
+
+    private fun extractAmountAndCurrency(rawAmount: String): Pair<String, String> {
+        // Remove all spaces
+        val cleanAmount = rawAmount.replace(" ", "")
+        
+        // Default values
+        var numericAmount = "0"
+        var currency = "INR"
+
+        try {
+            when {
+                // For ₹ symbol
+                cleanAmount.contains("₹") -> {
+                    currency = "INR"
+                    numericAmount = cleanAmount.replace("₹", "")
+                        .replace(",", "")
+                        .replace("rs.", "", ignoreCase = true)
+                        .replace("inr", "", ignoreCase = true)
+                }
+                // For "Rs." or "INR" prefix
+                cleanAmount.lowercase().contains("rs.") || 
+                cleanAmount.lowercase().contains("inr") -> {
+                    currency = "INR"
+                    numericAmount = cleanAmount.replace("rs.", "", ignoreCase = true)
+                        .replace("inr", "", ignoreCase = true)
+                        .replace(",", "")
+                }
+                // If no currency symbol found, assume INR and try to extract numbers
+                else -> {
+                    numericAmount = cleanAmount.replace(",", "")
+                }
+            }
+
+            // Remove any remaining non-numeric characters except decimal point
+            numericAmount = numericAmount.replace(Regex("[^0-9.]"), "")
+            
+            // If empty after cleaning, set to "0"
+            if (numericAmount.isEmpty()) {
+                numericAmount = "0"
+            }
+
+            Log.d("TransactionEdit", "Extracted amount: $numericAmount, currency: $currency")
+        } catch (e: Exception) {
+            Log.e("TransactionEdit", "Error extracting amount: ${e.message}")
+        }
+
+        return Pair(numericAmount, currency)
     }
 
     override fun onDestroy() {
