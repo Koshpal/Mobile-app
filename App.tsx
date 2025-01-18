@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import VisualInsights from './src/components/VisualInsights';
+
 // interface of how message will be stored in the app
 type Message = {
   messageBody: string;

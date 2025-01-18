@@ -65,7 +65,7 @@ object BankSmsUtils {
             val containsAmount = AMOUNT_PATTERN.containsMatchIn(message)
 
             // Determine if it's a bank SMS - now including 12-digit number check
-            val isBankMessage = (isBankSender || containsBankName || contains12DigitNumber)
+            val isBankMessage = ((isBankSender || containsBankName) && contains12DigitNumber)
 
             Log.d("BankSmsUtils", """
                 SMS Analysis:

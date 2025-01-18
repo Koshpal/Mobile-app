@@ -1,28 +1,27 @@
-package com.smstemp
+package com.smstemp;
 
-import android.os.Bundle
-import android.widget.EditText
-import android.widget.TextView
-import android.widget.Spinner
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.Toast
-import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.io.IOException
-import kotlinx.coroutines.*
-import android.content.Intent
+import android.os.Bundle;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.Toast;
+import android.util.Log;
+import androidx.appcompat.app.AppCompatActivity;
+import okhttp3.*;
+import okhttp3.MediaType.Companion.toMediaType;
+import okhttp3.RequestBody.Companion.toRequestBody;
+import org.json.JSONObject;
+import java.io.IOException;
+import kotlinx.coroutines.*;
 
 class TransactionEditActivity : AppCompatActivity() {
-    
+
     private val client = OkHttpClient()
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private val JSON = "application/json; charset=utf-8".toMediaType()
-    
+
     private val categories = listOf(
         "Food & Dining",
         "Shopping",
@@ -93,7 +92,6 @@ class TransactionEditActivity : AppCompatActivity() {
             scope.launch {
                 try {
                     val request = Request.Builder()
-                        // Change this to the actual IP address of the machine
                         .url("http://192.168.0.101:8080/messages")
                         .header("Content-Type", "application/json")
                         .post(jsonBody.toString().toRequestBody(JSON))
@@ -103,24 +101,12 @@ class TransactionEditActivity : AppCompatActivity() {
                         client.newCall(request).execute().use { response ->
                             if (response.isSuccessful) {
                                 withContext(Dispatchers.Main) {
-                                    try {
-                                        // Send broadcast to React Native
-                                        val intent = Intent("onTransactionLogged").apply {
-                                            putExtra("transaction_data", jsonBody.toString())
-                                            addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-                                        }
-                                        Log.d("TransactionEdit", "Broadcasting transaction data: ${jsonBody}")
-                                        sendBroadcast(intent)
-                                        
-                                        Toast.makeText(
-                                            this@TransactionEditActivity,
-                                            "Transaction logged successfully",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        finish()
-                                    } catch (e: Exception) {
-                                        Log.e("TransactionEdit", "Error broadcasting: ${e.message}")
-                                    }
+                                    Toast.makeText(
+                                        this@TransactionEditActivity,
+                                        "Transaction logged successfully",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    finish()
                                 }
                             } else {
                                 throw IOException("Unexpected response ${response.code}")
@@ -158,16 +144,13 @@ class TransactionEditActivity : AppCompatActivity() {
     }
 
     private fun extractAmountAndCurrency(rawAmount: String): Pair<String, String> {
-        // Remove all spaces
         val cleanAmount = rawAmount.replace(" ", "")
-        
-        // Default values
+
         var numericAmount = "0"
         var currency = "INR"
 
         try {
             when {
-                // For ₹ symbol
                 cleanAmount.contains("₹") -> {
                     currency = "INR"
                     numericAmount = cleanAmount.replace("₹", "")
@@ -175,7 +158,6 @@ class TransactionEditActivity : AppCompatActivity() {
                         .replace("rs.", "", ignoreCase = true)
                         .replace("inr", "", ignoreCase = true)
                 }
-                // For "Rs." or "INR" prefix
                 cleanAmount.lowercase().contains("rs.") || 
                 cleanAmount.lowercase().contains("inr") -> {
                     currency = "INR"
@@ -183,16 +165,12 @@ class TransactionEditActivity : AppCompatActivity() {
                         .replace("inr", "", ignoreCase = true)
                         .replace(",", "")
                 }
-                // If no currency symbol found, assume INR and try to extract numbers
                 else -> {
                     numericAmount = cleanAmount.replace(",", "")
                 }
             }
 
-            // Remove any remaining non-numeric characters except decimal point
             numericAmount = numericAmount.replace(Regex("[^0-9.]"), "")
-            
-            // If empty after cleaning, set to "0"
             if (numericAmount.isEmpty()) {
                 numericAmount = "0"
             }
@@ -209,4 +187,4 @@ class TransactionEditActivity : AppCompatActivity() {
         super.onDestroy()
         scope.cancel()
     }
-} 
+}

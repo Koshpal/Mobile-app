@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Dimensions, DeviceEventEmitter } from 'react-native';
+import { Dimensions } from 'react-native';
+import socketConnection from '../socket';
 
 const screenWidth = Dimensions.get('window').width;
 import {
@@ -25,7 +26,7 @@ const VisualInsights = () => {
 
     const fetchData = async () => {
         try {
-            console.log('Fetching data from server...');
+            // console.log('Fetching data from server...');
             const data = { phoneNumber: '9314635933' };
             const response = await axios.post('http://192.168.0.101:8080/users/getAllCategories', data);
             console.log('Fetched insights data:', response.data);
@@ -36,38 +37,16 @@ const VisualInsights = () => {
         }
     };
 
+
+
     useEffect(() => {
-        console.log('VisualInsights component mounted');
         fetchData();
 
-        // Listen for new transaction events
-        const subscription = DeviceEventEmitter.addListener(
-            'onTransactionLogged',
-            (event) => {
-                console.log('Transaction event received in VisualInsights:', event);
-                
-                try {
-                    // Handle both string and object formats
-                    const transactionData = event.data ? JSON.parse(event.data) : event;
-                    console.log('Processed transaction data:', transactionData);
-                    
-                    // Fetch updated data after a short delay
-                    setTimeout(() => {
-                        console.log('Fetching updated data after transaction...');
-                        fetchData();
-                    }, 1000);
-                } catch (error) {
-                    console.error('Error processing transaction event:', error);
-                }
-            }
-        );
-
-        // Cleanup function
-        return () => {
-            console.log('Cleaning up VisualInsights event listener');
-            subscription.remove();
-        };
-    }, []); // Empty dependency array
+        const socket = socketConnection();
+        socket.on('newTransaction', () => {
+            fetchData();
+        })
+    }, []);
 
     const chartData = {
         labels: insightsData.map(item => item.category || 'Unknown'),
