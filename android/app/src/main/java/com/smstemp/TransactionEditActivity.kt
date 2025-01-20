@@ -92,7 +92,7 @@ class TransactionEditActivity : AppCompatActivity() {
             scope.launch {
                 try {
                     val request = Request.Builder()
-                        .url("http://192.168.0.101:8080/messages")
+                        .url("http://192.168.197.74:8080/messages")
                         .header("Content-Type", "application/json")
                         .post(jsonBody.toString().toRequestBody(JSON))
                         .build()
