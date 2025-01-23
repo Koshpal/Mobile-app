@@ -194,6 +194,7 @@ class SmsBackgroundService : Service() {
                 putExtra("type", transactionInfo?.type ?: "unknown")
                 putExtra("message", message)
                 putExtra("notification_id", notificationId) // Pass notification ID
+                putExtra("senderPhoneNumber", sender)
               }
 
       val pendingIntent =

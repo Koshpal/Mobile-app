@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, Dimensions } from "react-native";
-import axios from "axios";
-import { BarChart } from "react-native-chart-kit";
-import socketConnection from "../socket";
+import React, {useEffect, useState} from 'react';
+import {StyleSheet, Text, View, Dimensions} from 'react-native';
+import axios from 'axios';
+import {BarChart} from 'react-native-chart-kit';
+import socketConnection from '../socket';
 
-const screenWidth = Dimensions.get("window").width;
+const screenWidth = Dimensions.get('window').width;
 
 const chartConfig = {
-  backgroundGradientFrom: "#FFFFFF",
+  backgroundGradientFrom: '#FFFFFF',
   backgroundGradientFromOpacity: 0,
-  backgroundGradientTo: "#000000",
+  backgroundGradientTo: '#000000',
   backgroundGradientToOpacity: 0.5,
   color: (opacity = 2) => `rgba(0, 0, 0, ${opacity})`,
   strokeWidth: 1,
@@ -28,16 +28,16 @@ const VisualInsights: React.FC = () => {
 
   const fetchData = async (): Promise<void> => {
     try {
-      const data = { phoneNumber: "9314635933" };
+      const data = {phoneNumber: '9314635933'};
       const response = await axios.post<InsightData[]>(
-        "http://192.168.197.74:8080/users/getAllCategories",
-        data
+        'http://192.168.0.101:8082/users/getCategorywiseData',
+        data,
       );
-      console.log("Fetched insights data:", response.data);
+      console.log('Fetched insights data:', response.data);
       setInsightsData(response.data);
       setLastUpdate(new Date().toISOString());
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error('Error fetching data:', error);
     }
   };
 
@@ -45,19 +45,19 @@ const VisualInsights: React.FC = () => {
     fetchData();
 
     const socket = socketConnection();
-    socket.on("newTransaction", fetchData);
+    socket.on('newTransaction', fetchData);
 
     return () => {
-      socket.off("newTransaction", fetchData);
+      socket.off('newTransaction', fetchData);
       socket.disconnect();
     };
   }, []);
 
   const chartData = {
-    labels: insightsData.map((item) => item.category || "Unknown"),
+    labels: insightsData.map(item => item.category || 'Unknown'),
     datasets: [
       {
-        data: insightsData.map((item) => parseFloat(item.amount.toString()) || 0),
+        data: insightsData.map(item => parseFloat(item.amount.toString()) || 0),
       },
     ],
   };
@@ -93,26 +93,26 @@ const styles = StyleSheet.create({
   Insightscontainer: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "red",
-    justifyContent: "center",
-    alignItems: "center",
+    borderColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 10,
-    height: "auto",
+    height: 'auto',
   },
   titleText: {
     fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontWeight: 'bold',
+    textAlign: 'center',
     marginTop: 20,
   },
   noDataText: {
     fontSize: 16,
-    color: "#666",
+    color: '#666',
     marginTop: 20,
   },
   updateText: {
     fontSize: 12,
-    color: "#666",
+    color: '#666',
     marginTop: 5,
     marginBottom: 10,
   },

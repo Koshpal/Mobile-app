@@ -47,6 +47,7 @@ class TransactionEditActivity : AppCompatActivity() {
         val type = intent.getStringExtra("type") ?: ""
         val message = intent.getStringExtra("message") ?: ""
         val notificationId = intent.getIntExtra("notification_id", -1)
+        val sender = intent.getStringExtra("senderPhoneNumber") ?: ""
 
         // Extract numerical amount and currency
         val (numericAmount, currency) = extractAmountAndCurrency(rawAmount)
@@ -86,13 +87,14 @@ class TransactionEditActivity : AppCompatActivity() {
                 put("timestamp", System.currentTimeMillis())
                 put("phoneNumber", "9314635933")
                 put("accountNumber", BankSmsUtils.extractAccountNumbers(message))
+                put("bank", sender)
             }
 
             // Make HTTP request
             scope.launch {
                 try {
                     val request = Request.Builder()
-                        .url("http://192.168.197.74:8080/messages")
+                        .url("http://192.168.0.101:8082/transaction")
                         .header("Content-Type", "application/json")
                         .post(jsonBody.toString().toRequestBody(JSON))
                         .build()

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
   View,
@@ -14,9 +14,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import VisualInsights from './src/components/VisualInsights';
-import { isBankSMS, extractAmount } from './src/constants/bank';
-
-
+import {isBankSMS, extractAmount} from './src/constants/bank';
 
 // main app component
 const App: React.FC = () => {
@@ -45,11 +43,11 @@ const App: React.FC = () => {
           message: 'This app needs access to read SMS messages.',
           buttonPositive: 'Allow',
           buttonNegative: 'Deny',
-        }
+        },
       );
 
       const granted = result === PermissionsAndroid.RESULTS.GRANTED;
-      setPermissionStatus(prev => ({ ...prev, sms: granted }));
+      setPermissionStatus(prev => ({...prev, sms: granted}));
       console.log('SMS permission:', granted ? 'granted' : 'denied');
       return granted;
     } catch (err) {
@@ -68,11 +66,11 @@ const App: React.FC = () => {
           message: 'This app needs to send notifications for new messages.',
           buttonPositive: 'Allow',
           buttonNegative: 'Deny',
-        }
+        },
       );
 
       const granted = result === PermissionsAndroid.RESULTS.GRANTED;
-      setPermissionStatus(prev => ({ ...prev, notifications: granted }));
+      setPermissionStatus(prev => ({...prev, notifications: granted}));
       console.log('Notification permission:', granted ? 'granted' : 'denied');
       return granted;
     } catch (err) {
@@ -90,7 +88,7 @@ const App: React.FC = () => {
       if (smsGranted && notificationGranted && Platform.OS === 'android') {
         setReceiveSmsPermission(PermissionsAndroid.RESULTS.GRANTED);
         try {
-          const { SmsListenerModule } = NativeModules;
+          const {SmsListenerModule} = NativeModules;
           await SmsListenerModule.startBackgroundService();
           console.log('Background service started successfully');
         } catch (serviceError) {
@@ -136,17 +134,18 @@ const App: React.FC = () => {
   const loadMessages = async (): Promise<void> => {
     try {
       // Load messages from SharedPreferences
-      const storedMessages = await NativeModules.SmsListenerModule.loadStoredMessages();
+      const storedMessages =
+        await NativeModules.SmsListenerModule.loadStoredMessages();
       const parsedMessages = JSON.parse(storedMessages);
       // Filter bank messages
       const bankMessages = parsedMessages.filter((msg: Message) =>
-        isBankSMS(msg.messageBody, msg.senderPhoneNumber)
+        isBankSMS(msg.messageBody, msg.senderPhoneNumber),
       );
 
       // Sort messages by timestamp
       const sortedMessages = bankMessages.sort(
         (a: Message, b: Message) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
       );
 
       // Update state
@@ -154,7 +153,6 @@ const App: React.FC = () => {
 
       // Also save to AsyncStorage for backup
       await AsyncStorage.setItem('messages', JSON.stringify(parsedMessages));
-
     } catch (err) {
       console.error('Error loading messages:', err);
     }
@@ -192,7 +190,12 @@ const App: React.FC = () => {
         try {
           const parsedMessage = JSON.parse(message);
 
-          if (isBankSMS(parsedMessage.messageBody, parsedMessage.senderPhoneNumber)) {
+          if (
+            isBankSMS(
+              parsedMessage.messageBody,
+              parsedMessage.senderPhoneNumber,
+            )
+          ) {
             const amount = extractAmount(parsedMessage.messageBody) || '0';
             const newMessage: Message = {
               messageBody: parsedMessage.messageBody,
@@ -211,12 +214,16 @@ const App: React.FC = () => {
       };
 
       // Listen for SMS events
-      const subscriber = DeviceEventEmitter.addListener('onSMSReceived', handleSMS);
+      const subscriber = DeviceEventEmitter.addListener(
+        'onSMSReceived',
+        handleSMS,
+      );
 
       // Check if app was launched with SMS data
       const checkLaunchData = async () => {
         try {
-          const initialMessage = await NativeModules.SmsListenerModule.getInitialSmsData();
+          const initialMessage =
+            await NativeModules.SmsListenerModule.getInitialSmsData();
           if (initialMessage) {
             handleSMS(initialMessage);
           }
@@ -234,7 +241,7 @@ const App: React.FC = () => {
   }, [receiveSmsPermission]);
 
   // function to render a message item
-  const renderItem = ({ item }: { item: Message }) => (
+  const renderItem = ({item}: {item: Message}) => (
     <View style={styles.messageContainer}>
       <Text style={styles.senderText}>{item.senderPhoneNumber}</Text>
       <Text style={styles.messageText}>{item.messageBody}</Text>
@@ -254,8 +261,6 @@ const App: React.FC = () => {
       <VisualInsights />
 
       <SafeAreaView style={styles.container}>
-
-
         <View style={styles.header}>
           <Text style={styles.titleText}>Bank SMS Inbox</Text>
           {receiveSmsPermission !== PermissionsAndroid.RESULTS.GRANTED && (
@@ -265,9 +270,7 @@ const App: React.FC = () => {
                   <Text style={styles.permissionText}>
                     SMS permission is required
                   </Text>
-                  <Text
-                    style={styles.retryText}
-                    onPress={retrySMSPermission}>
+                  <Text style={styles.retryText} onPress={retrySMSPermission}>
                     Tap to allow SMS permission
                   </Text>
                 </View>
