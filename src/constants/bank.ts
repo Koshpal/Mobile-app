@@ -1,5 +1,5 @@
 // Change this to the actual IP address of the machine
-export const machine_local_ip = '192.168.197.74';
+export const machine_local_ip = '192.168.0.102';
 
 // keywords to identify bank messages
 export const BANK_KEYWORDS = [
