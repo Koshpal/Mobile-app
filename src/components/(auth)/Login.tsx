@@ -7,7 +7,7 @@ import { RootStackParamList } from '../../navigation/AppNavigator';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type LoginProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'PhoneNumberPage'>;
 };
 
 const Login: React.FC<LoginProps> = ({ navigation }) => {
@@ -17,7 +17,9 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       const userPhoneNumber = await AsyncStorage.getItem('phoneNumber');
       const isUserLoggedIn = await AsyncStorage.getItem('isLoggedIn');
       if (isUserLoggedIn && userPhoneNumber) {
-        navigation.navigate('Home');
+
+        // because we are using a stack navigator, we need to navigate to the main tab navigator
+        navigation.navigate("MainTabs");
       } else if (isUserLoggedIn && !userPhoneNumber) {
         navigation.navigate('PhoneNumberPage');
       }

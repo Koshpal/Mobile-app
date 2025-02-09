@@ -76,14 +76,15 @@ const OTPPage: React.FC<OtpPageProps> = ({ navigation }) => {
         text2: "OTP Verified Successfully",
       });
 
+      // Save user login status to async storage
+      asyncStorage.setItem("isLoggedIn", "true");
+
       // remove everything from navigation stack
       navigation.reset({
         index: 0,
         routes: [{ name: "WelcomePage" }],
       });
 
-      // Save user login status to async storage
-      asyncStorage.setItem("isLoggedIn", "true");
     } else {
       setError("Invalid OTP. Please try again.");
     }

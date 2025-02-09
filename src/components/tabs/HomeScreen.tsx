@@ -13,13 +13,13 @@ import {
   Platform,
 } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { RootStackParamList } from '../../navigation/AppNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DeviceEventEmitter, NativeModules } from 'react-native';
-import { isBankSMS, extractAmount } from '../constants/bank';
+import { isBankSMS, extractAmount } from '../../constants/bank';
 
 type HomeScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 };
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
@@ -107,15 +107,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       console.error('Permission error:', err);
       setReceiveSmsPermission(PermissionsAndroid.RESULTS.DENIED);
     }
-  };
-
-  // Add separate retry functions for each permission
-  const retrySMSPermission = () => {
-    requestSMSPermission();
-  };
-
-  const retryNotificationPermission = () => {
-    requestNotificationPermission();
   };
 
   // function to save messages to AsyncStorage
@@ -326,12 +317,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         onPress={handleInsightsPress}>
         <Text style={styles.insightsButtonText}>View Insights</Text>
       </TouchableOpacity>
-
-      {(!permissionStatus.sms || !permissionStatus.notifications) && (
-        <Text style={styles.permissionText}>
-          Please grant required permissions to use the app
-        </Text>
-      )}
 
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>

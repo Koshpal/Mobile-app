@@ -19,7 +19,7 @@ const WelcomePage: React.FC<WelcomePageProps> = ({ navigation }) => {
             <Text style={styles.appName}>Koshpal</Text>
 
             <TouchableOpacity style={styles.button} onPress={() => {
-                navigation.replace('Home');
+                navigation.push('Home');
             }}>
                 <Text style={styles.buttonText}>Done</Text>
             </TouchableOpacity>

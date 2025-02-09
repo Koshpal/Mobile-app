@@ -30,7 +30,7 @@ const VisualInsights: React.FC = () => {
     try {
       const data = { phoneNumber: '9314635933' };
       const response = await axios.post<InsightData[]>(
-        'http://192.168.0.101:8082/users/getCategorywiseData',
+        'http://192.168.0.104:8082/users/getCategorywiseData',
         data,
       );
       console.log('Fetched insights data:', response.data);
@@ -76,11 +76,9 @@ const VisualInsights: React.FC = () => {
           width={screenWidth - 20}
           height={320}
           chartConfig={chartConfig}
-          verticalLabelRotation={30}
+          verticalLabelRotation={10}
           showValuesOnTopOfBars
-          yAxisLabel="Amount"
-          xAxisLabel="category"
-          yAxisSuffix="Rs"
+          yAxisSuffix=" Rs"
         />
       ) : (
         <Text style={styles.noDataText}>No data available</Text>
