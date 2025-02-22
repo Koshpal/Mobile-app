@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, Dimensions } from 'react-native';
 import axios from 'axios';
 import { BarChart } from 'react-native-chart-kit';
-import socketConnection from '../socket';
+import socketConnection from '../../socket/index';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -30,7 +30,7 @@ const VisualInsights: React.FC = () => {
     try {
       const data = { phoneNumber: '9314635933' };
       const response = await axios.post<InsightData[]>(
-        'http://192.168.0.104:8082/users/getCategorywiseData',
+        'http://172.22.100.198:8082/users/getCategorywiseData',
         data,
       );
       console.log('Fetched insights data:', response.data);

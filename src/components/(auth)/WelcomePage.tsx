@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 
 type WelcomePageProps = {
-    navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
+    navigation: NativeStackNavigationProp<RootStackParamList, 'WelcomePage'>;
 };
 const WelcomePage: React.FC<WelcomePageProps> = ({ navigation }) => {
     return (
@@ -19,7 +19,7 @@ const WelcomePage: React.FC<WelcomePageProps> = ({ navigation }) => {
             <Text style={styles.appName}>Koshpal</Text>
 
             <TouchableOpacity style={styles.button} onPress={() => {
-                navigation.push('Home');
+                navigation.push('MainTabs');
             }}>
                 <Text style={styles.buttonText}>Done</Text>
             </TouchableOpacity>

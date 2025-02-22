@@ -42,7 +42,7 @@ const PermissionsScreen = () => {
       // Navigate to Home if both permissions are granted
       if (smsResult === PermissionsAndroid.RESULTS.GRANTED &&
         notificationResult === PermissionsAndroid.RESULTS.GRANTED) {
-        navigation.replace('Home');
+        navigation.replace('MainTabs');
       }
     } catch (err) {
       console.error('Permission error:', err);
