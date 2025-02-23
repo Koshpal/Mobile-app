@@ -7,6 +7,7 @@ import Bell from "../assets/bell.png";
 import DownArrow from "../assets/downArrow.png";
 import Check from "../assets/check.png";
 import Add from "../assets/add.png";
+import ViewBankSms from "../assets/icons/ViewBankSms.png";
 
 
-export default Icons = { Home, FairShare, Insights, Investment, Monitoring, Bell, DownArrow, Check, Add };
+export default Icons = { ViewBankSms, Home, FairShare, Insights, Investment, Monitoring, Bell, DownArrow, Check, Add };

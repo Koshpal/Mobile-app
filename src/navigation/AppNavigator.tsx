@@ -39,6 +39,7 @@ export type TabParamList = {
     VisualInsights: undefined;
     FairShare: undefined;
     Monitoring: undefined;
+    ViewBankSms: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -63,6 +64,8 @@ const TabNavigator = () => {
                         iconSource = Icons.Monitoring;
                     } else if (route.name === "Investment") {
                         iconSource = Icons.Investment;
+                    } else if(route.name === "ViewBankSms") {
+                        iconSource = Icons.ViewBankSms;
                     }
 
                     return (
@@ -115,6 +118,18 @@ const TabNavigator = () => {
                 name="Monitoring"
                 component={Monitoring}
             /> */}
+
+            <Tab.Screen
+                name="ViewBankSms"
+                component={ViewBankSms}
+                options={{
+                    headerShown: true,
+                    headerTitle: 'Bank Messages',
+                    // gestureEnabled: true,
+                    // presentation: 'card'
+                }}
+            />
+
             <Tab.Screen
                 name="Investment"
                 component={Investment}
@@ -130,66 +145,66 @@ const TabNavigator = () => {
 const AppNavigator = () => {
     return (
         <NavigationContainer>
-            <Stack.Navigator 
+            <Stack.Navigator
                 initialRouteName="Login"
                 screenOptions={{
                     headerShown: false,
                     gestureEnabled: true,
                 }}
             >
-                <Stack.Screen 
-                    name="Login" 
-                    component={Login} 
+                <Stack.Screen
+                    name="Login"
+                    component={Login}
                 />
-                <Stack.Screen 
-                    name="PhoneNumberPage" 
+                <Stack.Screen
+                    name="PhoneNumberPage"
                     component={PhoneNumberPage}
-                    options={{ 
-                        headerShown: true, 
+                    options={{
+                        headerShown: true,
                         title: '',
-                        gestureEnabled: true 
+                        gestureEnabled: true
                     }}
                 />
-                <Stack.Screen 
-                    name="OtpPage" 
+                <Stack.Screen
+                    name="OtpPage"
                     component={OtpPage}
-                    options={{ 
-                        headerShown: true, 
+                    options={{
+                        headerShown: true,
                         title: '',
-                        gestureEnabled: true 
+                        gestureEnabled: true
                     }}
                 />
-                <Stack.Screen 
-                    name="WelcomePage" 
-                    component={WelcomePage} 
+                <Stack.Screen
+                    name="WelcomePage"
+                    component={WelcomePage}
                 />
-                <Stack.Screen 
-                    name="MainTabs" 
+                <Stack.Screen
+                    name="MainTabs"
                     component={TabNavigator}
                     options={{ gestureEnabled: false }}
                 />
-                <Stack.Screen 
-                    name="Permissions" 
+                <Stack.Screen
+                    name="Permissions"
                     component={PermissionsScreen}
                     options={{ gestureEnabled: false }}
                 />
-                <Stack.Screen 
-                    name="PandingTransactions" 
+                <Stack.Screen
+                    name="PandingTransactions"
                     component={PandingTransactions}
-                    options={{ 
-                        gestureEnabled: false ,
-                        headerShown: true,
-                    }}
-                />
-                <Stack.Screen 
-                    name="Categories" 
-                    component={Categories}
-                    options={{ 
-                        gestureEnabled: false ,
+                    options={{
+                        gestureEnabled: false,
                         headerShown: true,
                     }}
                 />
                 <Stack.Screen
+                    name="Categories"
+                    component={Categories}
+                    options={{
+                        gestureEnabled: false,
+                        headerShown: true,
+                    }}
+                />
+                {/* <Stack.Screen
                     name="ViewBankSms"
                     component={ViewBankSms}
                     options={{
@@ -198,7 +213,7 @@ const AppNavigator = () => {
                         // gestureEnabled: true,
                         // presentation: 'card'
                     }}
-                />
+                /> */}
             </Stack.Navigator>
         </NavigationContainer>
     );

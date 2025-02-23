@@ -30,7 +30,7 @@ const Categories: React.FC = () => {
     try {
       const data = { phoneNumber: '9314635933' };
       const response = await axios.post<InsightData[]>(
-        'http://172.22.100.198:8082/users/getCategorywiseData',
+        'http://192.168.1.104:8082/users/getCategorywiseData',
         data,
       );
       console.log('Fetched insights data:', response.data);
@@ -41,25 +41,36 @@ const Categories: React.FC = () => {
     }
   };
 
-  // useEffect(() => {
-  //   fetchData();
+  useEffect(() => {
+    fetchData();
 
-  //   const socket = socketConnection();
-  //   socket.on('newTransaction', fetchData);
+    const socket = socketConnection();
+    socket.on('newTransaction', fetchData);
 
-  //   return () => {
-  //     socket.off('newTransaction', fetchData);
-  //     socket.disconnect();
-  //   };
-  // }, []);
+    return () => {
+      socket.off('newTransaction', fetchData);
+      socket.disconnect();
+    };
+  }, []);
+
+  // const chartData = {
+  //   labels: ["Tea", "Fruits", "Coffee", "Fuel", "Vegs", "Fruit", "Subway", "Dinner"],
+  //   datasets: [
+  //     {
+  //       data: [50, 450, 250, 1000, 150, 600, 250, 400]
+  //     }
+  //   ]
+  // };
 
   const chartData = {
-    labels: ["Tea", "Fruits", "Coffee", "Fuel", "Vegs", "Fruit", "Subway", "Dinner"],
+    labels: insightsData.map((item) => item.category || "Unknown"),
+    // labels: insightsData.map(item => item.category || 'Unknown'),
     datasets: [
       {
-        data: [50, 450, 250, 1000, 150, 600, 250, 400]
-      }
-    ]
+        // data: insightsData.map((item) => parseFloat(item.amount.toString()) || 0),
+        data: insightsData.map(item => parseFloat(item.amount.toString()) || 0),
+      },
+    ],
   };
 
   const pieChartData = [

@@ -138,11 +138,16 @@ const Investment = () => {
         renderItem={({ item }) => (
           <View>
             <Text style={styles.sectionHeader}>{item.category}</Text>
-            {item.courses.map((course) => renderCourse({ item: course }))}
+            {item.courses.map((course, index) => (
+              <View key={`${item.category}-${index}`}>
+                {renderCourse({ item: course })}
+              </View>
+            ))}
           </View>
         )}
         contentContainerStyle={{ paddingBottom: 80 }}
       />
+
 
     </View>
   );

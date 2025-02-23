@@ -27,6 +27,9 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
                 <TouchableOpacity style={styles.notificationIcon} onPress={() => { navigation.push('PandingTransactions') }}>
                     <Image source={Icons.Bell} />
                 </TouchableOpacity>
+                {/* <TouchableOpacity style={styles.notificationIcon} onPress={() => { navigation.push('PandingTransactions') }}>
+                    <Text>V</Text>
+                </TouchableOpacity> */}
             </View>
 
             {/* Balance Section */}
