@@ -15,6 +15,8 @@ import Monitoring from '../components/tabs/Monitoring';
 import Icons from '../utils/Icons';
 import Home from '../components/tabs/Home';
 import ViewBankSms from '../screens/ViewBankSms';
+import PandingTransactions from '../screens/PandingTransactions';
+import Categories from '../screens/Insights/Categories';
 
 // Define Root Stack Navigation Params
 export type RootStackParamList = {
@@ -26,6 +28,8 @@ export type RootStackParamList = {
     VisualInsights: undefined;
     Permissions: undefined;
     ViewBankSms: undefined;
+    PandingTransactions: undefined;
+    Categories: undefined;
 };
 
 // Define Bottom Tab Navigation Params
@@ -89,22 +93,34 @@ const TabNavigator = () => {
             <Tab.Screen
                 name="Home"
                 component={Home}
+                options={{
+                    headerShown: false,
+                }}
             />
             <Tab.Screen
                 name="VisualInsights"
                 component={VisualInsights}
+                options={{
+                    headerShown: false,
+                }}
             />
             <Tab.Screen
                 name="FairShare"
                 component={FairShare}
+                options={{
+                    headerShown: false,
+                }}
             />
-            <Tab.Screen
+            {/* <Tab.Screen
                 name="Monitoring"
                 component={Monitoring}
-            />
+            /> */}
             <Tab.Screen
                 name="Investment"
                 component={Investment}
+                options={{
+                    headerShown: false,
+                }}
             />
         </Tab.Navigator>
     );
@@ -156,6 +172,22 @@ const AppNavigator = () => {
                     name="Permissions" 
                     component={PermissionsScreen}
                     options={{ gestureEnabled: false }}
+                />
+                <Stack.Screen 
+                    name="PandingTransactions" 
+                    component={PandingTransactions}
+                    options={{ 
+                        gestureEnabled: false ,
+                        headerShown: true,
+                    }}
+                />
+                <Stack.Screen 
+                    name="Categories" 
+                    component={Categories}
+                    options={{ 
+                        gestureEnabled: false ,
+                        headerShown: true,
+                    }}
                 />
                 <Stack.Screen
                     name="ViewBankSms"

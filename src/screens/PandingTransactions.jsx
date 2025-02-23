@@ -1,9 +1,14 @@
+import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 
 const PandingTransactions = () => {
   return (
-    <div>PandingTransactions</div>
+    <View>
+      <Text>PandingTransactions</Text>
+    </View>
   )
 }
 
 export default PandingTransactions
+
+const styles = StyleSheet.create({})
