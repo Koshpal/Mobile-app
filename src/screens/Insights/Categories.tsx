@@ -30,7 +30,7 @@ const Categories: React.FC = () => {
     try {
       const data = { phoneNumber: '9314635933' };
       const response = await axios.post<InsightData[]>(
-        'http://192.168.1.104:8082/users/getCategorywiseData',
+        'http://192.168.52.74:8082/users/getCategorywiseData',
         data,
       );
       console.log('Fetched insights data:', response.data);

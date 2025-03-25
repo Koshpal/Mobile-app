@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { Button } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/AppNavigator';
 
 const data = [
   {
@@ -83,8 +85,11 @@ const data = [
     ],
   },
 ];
+type InvestmentProps = {
+  navigation: NativeStackNavigationProp<RootStackParamList, 'PhoneNumberPage'>;
+};
 
-const Investment = () => {
+const Investment: React.FC<InvestmentProps> = ({navigation}) => {
   const [selectedTab, setSelectedTab] = useState("Videos");
 
   const renderCourse = ({ item }) => (
@@ -105,51 +110,58 @@ const Investment = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Financial Advices</Text>
+    <>
+      {/* <View>
+        <TouchableOpacity style={styles.buttonBook} onPress={() => navigation.push("BookSession")}>
+          <Text style={styles.buttonBookText}>Book Session Now!</Text>
+        </TouchableOpacity>
+      </View> */}
+      <View style={styles.container}>
+        <Text style={styles.header}>Financial Advices</Text>
 
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        {["Videos", "Articles", "Podcasts"].map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tab,
-              selectedTab === tab ? styles.selectedTab : null,
-            ]}
-            onPress={() => setSelectedTab(tab)}
-          >
-            <Text
+        {/* Tabs */}
+        <View style={styles.tabs}>
+          {["Videos", "Articles", "Podcasts"].map((tab) => (
+            <TouchableOpacity
+              key={tab}
               style={[
-                styles.tabText,
-                selectedTab === tab ? styles.selectedTabText : null,
+                styles.tab,
+                selectedTab === tab ? styles.selectedTab : null,
               ]}
+              onPress={() => setSelectedTab(tab)}
             >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.tabText,
+                  selectedTab === tab ? styles.selectedTabText : null,
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Courses */}
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.category}
+          renderItem={({ item }) => (
+            <View>
+              <Text style={styles.sectionHeader}>{item.category}</Text>
+              {item.courses.map((course, index) => (
+                <View key={`${item.category}-${index}`}>
+                  {renderCourse({ item: course })}
+                </View>
+              ))}
+            </View>
+          )}
+          contentContainerStyle={{ paddingBottom: 80 }}
+        />
+
+
       </View>
-
-      {/* Courses */}
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.category}
-        renderItem={({ item }) => (
-          <View>
-            <Text style={styles.sectionHeader}>{item.category}</Text>
-            {item.courses.map((course, index) => (
-              <View key={`${item.category}-${index}`}>
-                {renderCourse({ item: course })}
-              </View>
-            ))}
-          </View>
-        )}
-        contentContainerStyle={{ paddingBottom: 80 }}
-      />
-
-
-    </View>
+    </>
   );
 };
 
@@ -192,6 +204,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  buttonBook:{
+    backgroundColor: '#081F5C',
+    padding: 10,
+    borderRadius: 10,
+    margin: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white'
+  },
+  buttonBookText:{
+    color: 'white',
+    fontWeight: 'bold'
   },
   navItem: { alignItems: "center" },
   navText: { fontSize: 12, color: "white", marginTop: 3 },

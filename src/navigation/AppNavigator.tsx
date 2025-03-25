@@ -17,6 +17,7 @@ import Home from '../components/tabs/Home';
 import ViewBankSms from '../screens/ViewBankSms';
 import PandingTransactions from '../screens/PandingTransactions';
 import Categories from '../screens/Insights/Categories';
+import BookSession from '../screens/BookSession';
 
 // Define Root Stack Navigation Params
 export type RootStackParamList = {
@@ -30,6 +31,7 @@ export type RootStackParamList = {
     ViewBankSms: undefined;
     PandingTransactions: undefined;
     Categories: undefined;
+    BookSession: undefined;
 };
 
 // Define Bottom Tab Navigation Params
@@ -183,6 +185,15 @@ const AppNavigator = () => {
                     component={TabNavigator}
                     options={{ gestureEnabled: false }}
                 />
+
+                <Stack.Screen
+                    name="BookSession"
+                    component={BookSession}
+                    options={{ 
+                        headerShown: true
+                    }}
+                />
+
                 <Stack.Screen
                     name="Permissions"
                     component={PermissionsScreen}
