@@ -36,7 +36,23 @@ object BankSmsUtils {
     data class TransactionInfo(
         val amount: String,
         val type: String,
+        val name: String?,
         val rawMessage: String
+    )
+
+    // Regex to detect names in SMS (common patterns)
+    private val NAME_PATTERNS = listOf(
+        // Pattern for UPI transactions
+        Regex("(?:via|from)\\s+[A-Za-z\\s]+\\s+(?:a/c|acct|account)\\s+[\\d-]+\\s*(?:on\\s+\\d{2}-\\d{2}-\\d{2})?\\s*to\\s+([A-Za-z\\s]+?)(?=\\.|\\s*Not|\\s*Call|\\s*SMS|$)", RegexOption.IGNORE_CASE),
+        
+        // Pattern for direct transfers
+        Regex("(?:to|from|by|via)\\s+([A-Za-z\\s]+?)(?=\\s+(?:account|a/c|acct|upi|bank|rs|inr|₹))", RegexOption.IGNORE_CASE),
+        
+        // Pattern for credited/debited transactions
+        Regex("(?:credited|debited|paid|received)\\s+from\\s+([A-Za-z\\s]+?)(?=\\s+(?:account|a/c|acct|upi|bank|rs|inr|₹))", RegexOption.IGNORE_CASE),
+        
+        // Pattern for UPI/IMPS/NEFT/RTGS transactions
+        Regex("(?:upi|neft|imps|rtgs)\\s+to\\s+([A-Za-z\\s]+?)(?=\\s+(?:account|a/c|acct|upi|bank|rs|inr|₹))", RegexOption.IGNORE_CASE)
     )
 
     /**
@@ -92,7 +108,31 @@ object BankSmsUtils {
     }
 
     /**
-     * Extract transaction information (amount and type) from the SMS.
+     * Extract the name from the SMS, if present.
+     */
+    fun extractName(message: String): String? {
+        return try {
+            // First try to find a name using all patterns
+            val name = NAME_PATTERNS.mapNotNull { pattern ->
+                pattern.find(message)?.groupValues?.get(1)?.trim()
+            }.firstOrNull()
+
+            // If no name found, try to extract from the end of the message
+            if (name == null) {
+                // Look for "to [name]" at the end of the message
+                val endPattern = Regex("to\\s+([A-Za-z\\s]+?)(?=\\.|\\s*Not|\\s*Call|\\s*SMS|$)", RegexOption.IGNORE_CASE)
+                endPattern.find(message)?.groupValues?.get(1)?.trim()
+            } else {
+                name
+            }
+        } catch (e: Exception) {
+            Log.e("BankSmsUtils", "Error extracting name: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Extract transaction information (amount, type, and name) from the SMS.
      */
     fun extractTransactionInfo(message: String): TransactionInfo? {
         try {
@@ -100,6 +140,9 @@ object BankSmsUtils {
 
             // Extract amount
             val amount = extractAmount(message) ?: return null
+
+            // Extract name
+            val name = extractName(message)
 
             // Determine transaction type based on keywords
             val type = when {
@@ -118,6 +161,7 @@ object BankSmsUtils {
             return TransactionInfo(
                 amount = amount,
                 type = type,
+                name = name,
                 rawMessage = message
             )
         } catch (e: Exception) {

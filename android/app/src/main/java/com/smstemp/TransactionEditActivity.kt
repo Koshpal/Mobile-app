@@ -46,6 +46,7 @@ class TransactionEditActivity : AppCompatActivity() {
         val amount = intent.getStringExtra("amount") ?: ""
         val type = intent.getStringExtra("type") ?: ""
         val message = intent.getStringExtra("message") ?: ""
+        val sender = intent.getStringExtra("sender") ?: "Unknown Bank" // Get sender from intent
         val notificationId = intent.getIntExtra("notification_id", -1)
 
         // Set up views
@@ -80,6 +81,8 @@ class TransactionEditActivity : AppCompatActivity() {
                 put("description", description)
                 put("originalMessage", message)
                 put("timestamp", System.currentTimeMillis())
+                put("bank", sender) // Use the sender (bank name) from the SMS
+                put("paymentMode", "Online")
             }
 
             // Make HTTP request
@@ -87,7 +90,7 @@ class TransactionEditActivity : AppCompatActivity() {
                 try {
                     val request = Request.Builder()
                         // Change this to the actual IP address of the machine
-                        .url("http://192.168.0.101:8080/printBody")
+                        .url("http://192.168.223.106:8082/transaction")
                         .post(jsonBody.toString().toRequestBody(JSON))
                         .build()
 
@@ -124,6 +127,7 @@ class TransactionEditActivity : AppCompatActivity() {
                 Transaction Details:
                 Amount: $amount
                 Type: $type
+                Bank: $sender
                 Category: $selectedCategory
                 Description: $description
                 Original Message: $message

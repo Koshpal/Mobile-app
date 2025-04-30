@@ -13,6 +13,7 @@ import {
   AppStateStatus,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Transactions from './src/constants/screens/Transactions';
 
 // interface of how message will be stored in the app
 type Message = {
@@ -338,44 +339,7 @@ const App: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.titleText}>Bank SMS Inbox</Text>
-        {receiveSmsPermission !== PermissionsAndroid.RESULTS.GRANTED && (
-          <View>
-            {!permissionStatus.sms && (
-              <View>
-                <Text style={styles.permissionText}>
-                  SMS permission is required
-                </Text>
-                <Text
-                  style={styles.retryText}
-                  onPress={retrySMSPermission}>
-                  Tap to allow SMS permission
-                </Text>
-              </View>
-            )}
-            {!permissionStatus.notifications && (
-              <View>
-                <Text style={styles.permissionText}>
-                  Notification permission is required
-                </Text>
-                <Text
-                  style={styles.retryText}
-                  onPress={retryNotificationPermission}>
-                  Tap to allow notifications
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-      </View>
-      <FlatList
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => `${item.timestamp}-${index}`}
-        ListEmptyComponent={renderEmptyComponent}
-        contentContainerStyle={styles.listContent}
-      />
+      <Transactions />
     </SafeAreaView>
   );
 };

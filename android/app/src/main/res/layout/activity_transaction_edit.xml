@@ -41,6 +41,22 @@
             android:background="#f5f5f5"
             android:layout_marginBottom="16dp"/>
 
+        <!-- Name (Non-editable) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Name"
+            android:textStyle="bold"
+            android:textSize="16sp"/>
+
+        <TextView
+            android:id="@+id/nameText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:background="#f5f5f5"
+            android:layout_marginBottom="16dp"/>
+
         <!-- Category (Dropdown) -->
         <TextView
             android:layout_width="wrap_content"

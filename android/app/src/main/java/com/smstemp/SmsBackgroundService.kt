@@ -177,6 +177,7 @@ class SmsBackgroundService : Service() {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 putExtra("amount", transactionInfo?.amount ?: "")
                 putExtra("type", transactionInfo?.type ?: "unknown")
+                putExtra("name", transactionInfo?.name ?: "")
                 putExtra("message", message)
                 putExtra("notification_id", notificationId)  // Pass notification ID
             }
@@ -207,7 +208,13 @@ class SmsBackgroundService : Service() {
 
             // Build and show notification
             val notificationTitle = "New ${transactionInfo?.type?.capitalize()} Transaction"
-            val notificationText = "${transactionInfo?.amount ?: "Amount unknown"} - Click to add details"
+            val notificationText = buildString {
+                append(transactionInfo?.amount ?: "Amount unknown")
+                transactionInfo?.name?.let { name ->
+                    append(" - $name")
+                }
+                append(" - Click to add details")
+            }
 
             val notification = NotificationCompat.Builder(this, "bank_sms_channel")
                 .setContentTitle(notificationTitle)
