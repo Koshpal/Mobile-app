@@ -18,7 +18,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 const API_BASE_URL = 'http://192.168.223.106:8082';
 const PHONE_NUMBER = '9314635933';
 
-const Transactions = () => {
+const Transactions = ({ navigation }) => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -287,7 +287,10 @@ const Transactions = () => {
             />
 
             {/* Add Transaction Button */}
-            <TouchableOpacity style={styles.addButton}>
+            <TouchableOpacity 
+                style={styles.addButton}
+                onPress={() => navigation.navigate('AddTransaction')}
+            >
                 <Text style={styles.addButtonText}>+</Text>
             </TouchableOpacity>
         </View>
