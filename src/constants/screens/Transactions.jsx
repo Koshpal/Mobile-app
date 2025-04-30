@@ -140,8 +140,11 @@ const Transactions = ({ navigation }) => {
     // Render transaction item
     const renderTransaction = ({ item }) => (
         <View style={styles.transactionItem}>
+            {/* Left section: Name and Details */}
             <View style={styles.transactionLeft}>
-                <Text style={styles.transactionName}>{item.name}</Text>
+                <Text style={styles.transactionName} numberOfLines={1}>
+                    {item.name}
+                </Text>
                 <View style={styles.transactionDetails}>
                     <Text style={styles.transactionTime}>
                         {format(item.timestamp, 'hh:mm a')}
@@ -150,18 +153,17 @@ const Transactions = ({ navigation }) => {
                 </View>
             </View>
 
+            {/* Middle section: Category and Payment Mode */}
             <View style={styles.transactionMiddle}>
-                <View style={styles.paymentMode}>
-                    {/* <Icon name="cash" size={20} color="#333" /> */}
-                    <Text style={styles.paymentModeText}>{item.paymentMode}</Text>
-                </View>
-                <View style={[styles.categoryIcon, { backgroundColor: getCategoryColor(item.category) }]}>
-                    {/* <Icon name={getCategoryIcon(item.category)} size={20} color="#fff" /> */}
-                </View>
                 <Text style={styles.categoryText}>{item.category}</Text>
+                <Text style={styles.paymentModeText}>{item.paymentMode}</Text>
             </View>
 
-            <Text style={[styles.amount, { color: item.type === 'credited' ? '#4CAF50' : '#2196F3' }]}>
+            {/* Right section: Amount */}
+            <Text style={[
+                styles.amount,
+                { color: item.type === 'credited' ? '#4CAF50' : '#2196F3' }
+            ]}>
                 {item.type === 'credited' ? '+' : ''}{item.amount.toFixed(2)}
             </Text>
         </View>
@@ -334,8 +336,20 @@ const styles = StyleSheet.create({
     },
     summary: {
         backgroundColor: '#fff',
-        paddingVertical: 20,
+        paddingVertical: 16,
         paddingHorizontal: 16,
+        marginHorizontal: 16,
+        marginTop: 16,
+        marginBottom: 8,
+        borderRadius: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
     summaryRow: {
         flexDirection: 'row',
@@ -349,15 +363,15 @@ const styles = StyleSheet.create({
     summaryLabelRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 2,
     },
     summaryLabel: {
-        fontSize: 16,
+        fontSize: 12,
         color: '#1a237e',
-        marginBottom: 4,
+        marginBottom: 2,
     },
     summaryAmount: {
-        fontSize: 24,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#1a237e',
     },
@@ -365,7 +379,7 @@ const styles = StyleSheet.create({
         width: 1,
         height: '100%',
         backgroundColor: '#e0e0e0',
-        marginHorizontal: 16,
+        marginHorizontal: 8,
     },
     dateNav: {
         flexDirection: 'row',
@@ -424,55 +438,56 @@ const styles = StyleSheet.create({
     transactionItem: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
         backgroundColor: '#fff',
-        padding: 16,
-        marginBottom: 8,
-        borderRadius: 8,
+        padding: 12,
+        marginBottom: 1,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+        borderRadius: 16,
     },
     transactionLeft: {
-        flex: 1,
+        flex: 2,
+        paddingRight: 8,
     },
     transactionName: {
-        fontSize: 16,
+        fontSize: 13,
         fontWeight: '500',
         color: '#333',
-        marginBottom: 4,
+        marginBottom: 2,
+    },
+    transactionDetails: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     transactionTime: {
-        fontSize: 14,
+        fontSize: 11,
         color: '#666',
+    },
+    phoneNumber: {
+        fontSize: 11,
+        color: '#666',
+        marginLeft: 8,
     },
     transactionMiddle: {
-        flexDirection: 'row',
+        flex: 1,
         alignItems: 'center',
-        marginRight: 16,
-    },
-    paymentMode: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginRight: 8,
-    },
-    paymentModeText: {
-        marginLeft: 4,
-        fontSize: 14,
-        color: '#666',
-    },
-    categoryIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#4CAF50',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 8,
+        paddingHorizontal: 4,
     },
     categoryText: {
-        fontSize: 14,
+        fontSize: 11,
+        color: '#666',
+        marginBottom: 2,
+    },
+    paymentModeText: {
+        fontSize: 11,
         color: '#666',
     },
     amount: {
-        fontSize: 16,
+        fontSize: 13,
         fontWeight: '500',
+        textAlign: 'right',
+        minWidth: 80,
     },
     addButton: {
         position: 'absolute',
@@ -534,30 +549,6 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         alignItems: 'center',
-    },
-    transactionDetails: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    phoneNumber: {
-        fontSize: 12,
-        color: '#666',
-        marginLeft: 8,
-    },
-    summaryHeader: {
-        paddingBottom: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-        marginBottom: 8,
-    },
-    phoneNumberHeader: {
-        fontSize: 16,
-        color: '#333',
-        fontWeight: '500',
-        textAlign: 'center',
-    },
-    summaryContent: {
-        flexDirection: 'row',
     },
     selectedDateContainer: {
         flexDirection: 'row',
