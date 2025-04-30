@@ -37,7 +37,7 @@ class TransactionEditActivity : AppCompatActivity() {
         // Set up UI elements
         val amountTextView = findViewById<TextView>(R.id.amountTextView)
         val typeTextView = findViewById<TextView>(R.id.typeTextView)
-        val timestampTextView = findViewById<TextView>(R.id.timestampTextView)
+        val todayDateTextView = findViewById<TextView>(R.id.todayDateTextView)
         val upiRefTextView = findViewById<TextView>(R.id.upiRefTextView)
         val phoneNumberTextView = findViewById<TextView>(R.id.phoneNumberTextView)
         val categorySpinner = findViewById<Spinner>(R.id.categorySpinner)
@@ -51,7 +51,7 @@ class TransactionEditActivity : AppCompatActivity() {
         // Set transaction details
         amountTextView.text = amount
         typeTextView.text = type
-        timestampTextView.text = formatTimestamp(timestamp)
+        todayDateTextView.text = formatTimestamp(timestamp)
         upiRefTextView.text = "UPI Ref: $upiRef"
         phoneNumberTextView.text = "Phone: $phoneNumber"
 

@@ -353,9 +353,9 @@ const App: React.FC = () => {
           options={{
             title: 'Transactions',
             headerStyle: {
-              backgroundColor: '#f4511e',
+              backgroundColor: '#fff',
             },
-            headerTintColor: '#fff',
+            headerTintColor: '#000',
             headerTitleStyle: {
               fontWeight: 'bold',
             },
@@ -367,9 +367,9 @@ const App: React.FC = () => {
           options={{
             title: 'Add Transaction',
             headerStyle: {
-              backgroundColor: '#f4511e',
+              backgroundColor: '#fff',
             },
-            headerTintColor: '#fff',
+            headerTintColor: '#000',
             headerTitleStyle: {
               fontWeight: 'bold',
             },
