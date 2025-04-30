@@ -178,7 +178,10 @@ class SmsBackgroundService : Service() {
                 putExtra("amount", transactionInfo?.amount ?: "")
                 putExtra("type", transactionInfo?.type ?: "unknown")
                 putExtra("name", transactionInfo?.name ?: "")
-                putExtra("message", message)
+                putExtra("upiRef", "") // Add UPI ref extraction if available
+                putExtra("phoneNumber", sender)
+                putExtra("originalMessage", message)
+                putExtra("senderAddress", sender)
                 putExtra("notification_id", notificationId)  // Pass notification ID
             }
 
