@@ -175,7 +175,7 @@ class TransactionEditActivity : AppCompatActivity() {
                 }
 
                 val request = Request.Builder()
-                    .url("http://192.168.223.106:8082/transaction")
+                    .url("https://api.koshpal.tusharsukhwal.com/transaction")
                     .post(json.toString().toRequestBody(JSON))
                     .build()
 

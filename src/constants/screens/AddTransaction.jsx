@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.223.106:8082';
+const API_BASE_URL = 'https://api.koshpal.tusharsukhwal.com';
 const PHONE_NUMBER = '9314635933';
 
 const AddTransaction = ({ navigation }) => {
@@ -60,14 +60,27 @@ const AddTransaction = ({ navigation }) => {
             };
 
             const response = await axios.post(`${API_BASE_URL}/transaction/manual`, transaction);
-            
+
             if (response.status === 200) {
                 Alert.alert('Success', 'Transaction added successfully', [
                     { text: 'OK', onPress: () => navigation.goBack() }
                 ]);
             }
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.message || 'Failed to add transaction');
+            console.log('Full Axios Error:', JSON.stringify(error, null, 2));
+
+            if (error.response) {
+                console.log('Response Data:', error.response.data);
+                console.log('Status:', error.response.status);
+                console.log('Headers:', error.response.headers);
+                Alert.alert('Error', error.response.data?.message || 'Server error occurred');
+            } else if (error.request) {
+                console.log('No response received:', error.request);
+                Alert.alert('Error', 'No response from server. Check your network.');
+            } else {
+                console.log('Error setting up request:', error.message);
+                Alert.alert('Error', error.message);
+            }
         }
     };
 
@@ -137,8 +150,8 @@ const AddTransaction = ({ navigation }) => {
                 {/* Category Selection */}
                 <View style={styles.inputContainer}>
                     <Text style={styles.label}>Category</Text>
-                    <ScrollView 
-                        horizontal 
+                    <ScrollView
+                        horizontal
                         showsHorizontalScrollIndicator={false}
                         style={styles.categoryScroll}
                     >
@@ -161,7 +174,7 @@ const AddTransaction = ({ navigation }) => {
                 </View>
 
                 {/* Submit Button */}
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.submitButton}
                     onPress={handleSubmit}
                 >

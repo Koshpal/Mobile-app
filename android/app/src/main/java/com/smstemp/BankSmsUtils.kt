@@ -7,7 +7,7 @@ object BankSmsUtils {
     private val BANK_SENDERS = listOf(
         "HDFCBK", "SBIINB", "ICICIB", "AXISBK", "KOTAK", "PNBSMS",
         "SCBANK", "BOIIND", "CANBNK", "UNIONB", "CENTBK", "BOBIBN",
-        "IDBIBK", "YESBNK", "INDBNK", "EQUITAS"
+        "IDBIBK", "YESBNK", "INDBNK", "EQUITAS", "EQUTAS"
     ).map { it.lowercase() }
 
     // Transaction-related keywords

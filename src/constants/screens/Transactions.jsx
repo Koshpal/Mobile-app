@@ -15,7 +15,7 @@ import axios from 'axios';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Constants
-const API_BASE_URL = 'http://192.168.223.106:8082';
+const API_BASE_URL = 'https://api.koshpal.tusharsukhwal.com';
 const PHONE_NUMBER = '9314635933';
 
 const Transactions = ({ navigation }) => {
@@ -227,6 +227,7 @@ const Transactions = ({ navigation }) => {
                     <TextInput
                         style={styles.searchInput}
                         placeholder="Search customer"
+                        placeholderTextColor="#000"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
@@ -418,8 +419,9 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 16,
-        color: '#1a237e',
-        paddingVertical: 8,
+        color: '#000',
+        backgroundColor: '#f5f7ff',
+        paddingVertical: 6,
     },
     calendarButton: {
         width: 40,
