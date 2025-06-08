@@ -193,6 +193,7 @@ const Transactions = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            <Text style={styles.title}>Transactions</Text>
             {/* Summary Section */}
             <View style={styles.summary}>
                 <View style={styles.summaryRow}>
@@ -326,6 +327,13 @@ const getCategoryColor = (category) => {
 };
 
 const styles = StyleSheet.create({
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1a237e',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',

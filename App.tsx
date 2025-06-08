@@ -351,28 +351,14 @@ const App: React.FC = () => {
           name="Transactions" 
           component={Transactions}
           options={{
-            title: 'Transactions',
-            headerStyle: {
-              backgroundColor: '#fff',
-            },
-            headerTintColor: '#000',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
+            headerShown : false,
           }}
         />
         <Stack.Screen 
           name="AddTransaction" 
           component={AddTransaction}
           options={{
-            title: 'Add Transaction',
-            headerStyle: {
-              backgroundColor: '#fff',
-            },
-            headerTintColor: '#000',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
+            headerShown : false,
           }}
         />
       </Stack.Navigator>
