@@ -1,7 +1,6 @@
 import 'react-native-gesture-handler';
 import React, {useEffect, useState} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
 import {
   SafeAreaView,
   View,
@@ -16,8 +15,7 @@ import {
   AppStateStatus,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Transactions from './src/constants/screens/Transactions';
-import AddTransaction from './src/constants/screens/AddTransaction';
+import AppNavigator from './src/navigation/AppNavigator';
 
 // interface of how message will be stored in the app
 type Message = {
@@ -26,9 +24,6 @@ type Message = {
   timestamp: string;
   amount: string;
 };
-
-// Create the stack navigator with proper typing
-const Stack = createStackNavigator();
 
 // keywords to identify bank messages
 const BANK_KEYWORDS = [
@@ -346,22 +341,7 @@ const App: React.FC = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen 
-          name="Transactions" 
-          component={Transactions}
-          options={{
-            headerShown : false,
-          }}
-        />
-        <Stack.Screen 
-          name="AddTransaction" 
-          component={AddTransaction}
-          options={{
-            headerShown : false,
-          }}
-        />
-      </Stack.Navigator>
+      <AppNavigator />
     </NavigationContainer>
   );
 };
