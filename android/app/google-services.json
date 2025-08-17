@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "427115039961",
+    "project_id": "koshpal-d5e38",
+    "storage_bucket": "koshpal-d5e38.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427115039961:android:a4d74204a2a06c50d702c8",
+        "android_client_info": {
+          "package_name": "com.smstemp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "427115039961-st41hqr2ung0m95d702skcgkljogdg5t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.smstemp",
+            "certificate_hash": "0cba2ffe242c6a80d328e68f1980ac1c64a8531b"
+          }
+        },
+        {
+          "client_id": "427115039961-785p6rddvc80rnidj86if4f7qo8sbc24.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAE-YNGMRCCOPFxRYAUIcYkYAIIWi-siPY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "427115039961-785p6rddvc80rnidj86if4f7qo8sbc24.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
